@@ -22,6 +22,11 @@ import logging
 import rdflib
 from .files import *
 
+from rdflib.namespace import RDF, RDFS, XSD, DCTERMS, FOAF
+
+ADMS = rdflib.Namespace("http://www.w3.org/ns/adms#")
+RADION = rdflib.Namespace("http://www.w3.org/ns/radion#")
+
 def load_rdf(name, format='xml'):
     '''Load RDF file or URL and return a rdflib.Graph object.'''
     logging.debug("Loading RDF graph %s.", name)

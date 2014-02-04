@@ -19,6 +19,7 @@
 # permissions and limitations under the Licence.
 
 import logging
+import datetime
 
 from .. import *
 
@@ -118,6 +119,12 @@ INSERT {
 def process():
     g = load_rdf("http://www.w3.org/2012/06/tr2adms/adms", format='turtle')
     for query in QUERIES:
-        logging.debug("Running query %s", query)
+        logging.debug("Running update query %s", query)
         g.update(query)
+    logging.debug("Transforming dcterms:created dates into xsd:dateTime.")
+    for s, p, o in g.triples((None, DCTERMS.created, None)):
+        d = rdflib.Literal(str(o), datatype=XSD.date).value
+        newo = rdflib.Literal(datetime.datetime(d.year, d.month, d.day))
+        g.remove((s,p,o))
+        g.add((s,p,newo))
     return g
