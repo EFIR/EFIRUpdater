@@ -24,6 +24,22 @@ import datetime
 from .. import *
 
 QUERIES = [
+# Remove double statuses
+"""
+PREFIX adms: <http://www.w3.org/ns/adms#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX radion: <http://www.w3.org/ns/radion#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+DELETE {
+  ?asset adms:status ?other
+} WHERE {
+  ?asset rdf:type adms:SemanticAsset ;
+         adms:status <http://purl.org/adms/status/Deprecated> ;
+         adms:status ?other
+  FILTER(?other != <http://purl.org/adms/status/Deprecated>)
+}
+""",
 # Create distributions and update asset
 """
 PREFIX adms: <http://www.w3.org/ns/adms#>
