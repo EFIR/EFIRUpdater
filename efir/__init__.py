@@ -20,4 +20,5 @@
 
 from .files import *
 from .rdf import *
+from .model import *
 from .processor import *

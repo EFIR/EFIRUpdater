@@ -117,7 +117,7 @@ INSERT {
 
 
 def process():
-    g = load_rdf("http://www.w3.org/2012/06/tr2adms/adms", format='turtle')
+    g = Graph.load("http://www.w3.org/2012/06/tr2adms/adms", format='turtle')
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         g.update(query)
