@@ -26,7 +26,6 @@ import urllib.parse
 
 CACHE_DIR = "cache"
 DATA_DIR = "data"
-REPOS_DIR = "repositories"
 OUT_DIR = "output"
 
 def urlopen_cache(url, binary=True):
