@@ -27,7 +27,8 @@ from .rdf import *
 InteroperabilityLevel = rdflib.Namespace("http://purl.org/adms/interoperabilitylevel/")
 RepresentationTechnique = rdflib.Namespace("http://purl.org/adms/representationtechnique/")
 Status = rdflib.Namespace("http://purl.org/adms/status/")
-MediaType = rdflib.Namespace("http://publications.europa.eu/resource/authority/file-type")
+#MediaType = rdflib.Namespace("http://publications.europa.eu/resource/authority/file-type")
+MediaType = rdflib.Namespace("http://purl.org/NET/mediatypes/")
 Eurovoc = rdflib.Namespace("http://eurovoc.europa.eu/")
 Language = rdflib.Namespace("http://publications.europa.eu/resource/authority/language")
 Country = rdflib.Namespace("http://publications.europa.eu/resource/authority/country")
@@ -40,25 +41,22 @@ PublisherType = rdflib.Namespace("http://purl.org/adms/publishertype/")
 
 ## Classes
 
+@adms_type_uri(FOAF.Agent, DCTERMS.Agent)
 class Publisher(ADMSResource):
 
-    TYPE_URI = FOAF.Agent
-
     # Recommended properties
-    name            = ADMSProperty(FOAF.name, rng=Literal)
+    name            = ADMSProperty(FOAF.name, RDFS.label, rng=Literal)
     type            = ADMSProperty(DCTERMS.type, rng=PublisherType)
 
     def __init__(self, uri):
         ADMSResource.__init__(self, uri)
 
 
+@adms_type_uri(DCTERMS.LicenseDocument)
 class LicenseDocument(ADMSResource):
-
-    TYPE_URI = DCTERMS.LicenseDocument
 
     # Mandatory properties
     type            = ADMSProperty(DCTERMS.type, min=1, max=1)
-    inScheme        = ADMSProperty(SKOS.inScheme)
     # Recommended properties
     label           = ADMSProperty(RDFS.label)
     description     = ADMSProperty(DCTERMS.description)
@@ -67,12 +65,11 @@ class LicenseDocument(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
+@adms_type_uri(ADMS.AssetDistribution, ADMS.SemanticAssetDistribution)
 class AssetDistribution(ADMSResource):
 
-    TYPE_URI = ADMS.AssetDistribution
-
     # Mandatory properties
-    accessURL       = ADMSProperty(DCAT.accessURL, rng=URIRef, min=1)
+    accessURL       = ADMSProperty(DCAT.accessURL, ADMS.accessURL, rng=URIRef, min=1)
     # Recommended properties
     status          = ADMSProperty(ADMS.status, rng=Status, max=1)
     downloadURL     = ADMSProperty(DCAT.downloadURL, rng=URIRef)
@@ -82,10 +79,10 @@ class AssetDistribution(ADMSResource):
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
     description     = ADMSProperty(DCTERMS.description, rng=Literal)
     format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, max=1)
-    issued          = ADMSProperty(DCTERMS.issued, rng=datetime.datetime)
+    issued          = ADMSProperty(DCTERMS.issued, DCTERMS.created, rng=datetime.datetime)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
-    title           = ADMSProperty(DCTERMS.title, rng=Literal)
+    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal)
     fileSize        = ADMSProperty(SCHEMA.fileSize, max=1)
     checksum        = ADMSProperty(SPDX.checksum, max=1)
     tagURL          = ADMSProperty(ADMSSW.tagURL, max=1)
@@ -94,22 +91,21 @@ class AssetDistribution(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
+@adms_type_uri(ADMS.Asset, ADMS.SemanticAsset)
 class Asset(ADMSResource):
-
-    TYPE_URI = ADMS.Asset
 
     # Mandatory properties
     theme           = ADMSProperty(DCAT.theme, rng=Eurovoc, min=1)
     description     = ADMSProperty(DCTERMS.description, rng=Literal, min=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
-    title           = ADMSProperty(DCTERMS.title, rng=Literal, min=1)
+    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal, min=1)
     type            = ADMSProperty(DCTERMS.type, rng=(AssetType,SolutionType), min=1)
     # Recommended properties
     status          = ADMSProperty(ADMS.status, rng=Status, max=1)
     interoperabilityLevel = ADMSProperty(ADMS.interoperabilityLevel, rng=InteroperabilityLevel)
     contactPoint    = ADMSProperty(DCAT.contactPoint, max=1)
-    distribution    = ADMSProperty(ADMS.distribution, rng=AssetDistribution)
+    distribution    = ADMSProperty(RADION.distribution, invuris=RADION.distributionOf, rng=AssetDistribution)
     keyword         = ADMSProperty(DCAT.keyword, rng=Literal)
     landingPage     = ADMSProperty(DCAT.landingPage, max=1)
     language        = ADMSProperty(DCTERMS.language, max=1)
@@ -120,13 +116,13 @@ class Asset(ADMSResource):
     # Optional properties
     identifier      = ADMSProperty(ADMS.identifier)
     included        = ADMSProperty(ADMS.includedAsset)
-    last            = ADMSProperty(ADMS.last, max=1)
-    next            = ADMSProperty(ADMS.next)
-    prev            = ADMSProperty(ADMS.prev)
+    last            = ADMSProperty(ADMS.last, XHV.last, max=1)
+    next            = ADMSProperty(ADMS.next, XHV.next)
+    prev            = ADMSProperty(ADMS.prev, XHV.prev)
     sample          = ADMSProperty(ADMS.sample)
     translation     = ADMSProperty(ADMS.translation)
     versionNotes    = ADMSProperty(ADMS.versionNotes, rng=Literal, max=1)
-    issued          = ADMSProperty(DCTERMS.issued, rng=datetime.datetime, max=1)
+    issued          = ADMSProperty(DCTERMS.issued, DCTERMS.created, rng=datetime.datetime, max=1)
     documentation   = ADMSProperty(FOAF.page)
     versionInfo     = ADMSProperty(OWL.versioninfo, rng=Literal)
     altLabel        = ADMSProperty(SKOS.altLabel, rng=Literal)

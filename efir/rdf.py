@@ -32,6 +32,10 @@ DCAT = rdflib.Namespace("http://www.w3.org/ns/dcat#")
 WRDS = rdflib.Namespace("http://www.w3.org/2007/05/powder-s#")
 SCHEMA = rdflib.Namespace("http://schema.org/")
 SPDX = rdflib.Namespace("http://spdx.org/rdf/terms#")
+XHV = rdflib.Namespace("http://www.w3.org/1999/xhtml/vocab#")
+
+# Global dictionary of registered ADMSResources, indexed by type uri.
+ADMS_RESOURCES = {}
 
 
 class Graph(rdflib.Graph):
@@ -54,6 +58,7 @@ class Graph(rdflib.Graph):
         self.bind('wrds', str(WRDS))
         self.bind('schema', str(SCHEMA))
         self.bind('spdx', str(SPDX))
+        self.bind('xhv', str(XHV))
 
     @classmethod
     def load(cls, name, format='xml'):
@@ -64,41 +69,118 @@ class Graph(rdflib.Graph):
             g.parse(f, format=format)
         return g
 
-    def add(self, item):
-        if isinstance(item, ADMSResource):
-            item._add_to_graph(self)
+    def add(self, item, memo=None):
+        if memo is None:
+            memo = set()
+        if isinstance(item, list):
+            for it in item:
+                self.add(it, memo)
+        elif isinstance(item, ADMSResource):
+            item._add_to_graph(self, memo)
         else:
             super().add(item)
+
+    def extract(self, uri, known={}):
+        '''Extract resource uri from the graph. The triples found are removed.
+        The extraction is recursive. Known (i.e., already extracted) objects
+        are fetched from and put into the known dictionary.
+        Uri may also be a literal, in which case it is returned as is.
+        '''
+        if isinstance(uri, Literal):
+            return uri
+        if uri in known:
+            return known[uri]
+        type_uris = self.objects(uri, RDF.type)
+        cls = None
+        for type_uri in self.objects(uri, RDF.type):
+            if type_uri in ADMS_RESOURCES:
+                newcls = ADMS_RESOURCES[type_uri]
+                if cls is not None and newcls != cls:
+                    logging.warning("Type conflict for uri %s, pretend %s, but already %s.",
+                                    uri, newcls.__name__, cls.__name__)
+                else:
+                    cls = newcls
+        if cls is None:
+            return uri
+        resource = cls(uri)
+        known[uri] = resource
+        for type_uri in resource.TYPE_URIS:
+            self.remove((uri, RDF.type, type_uri))
+        for name, prop in resource.properties():
+            values = set()
+            for prop_uri in prop.uris:
+                values.update(self.extract(obj, known)
+                              for obj in self.objects(uri, prop_uri))
+                self.remove((uri, prop_uri, None))
+            for prop_uri in prop.invuris:
+                values.update(self.extract(subj, known)
+                              for subj in self.subjects(prop_uri, uri))
+                self.remove((None, prop_uri, uri))
+            if len(values) == 0:
+                continue
+            if len(values) == 1:
+                values = values.pop()
+            setattr(resource, name, values)
+        return resource
+
+    def extract_all(self, cls):
+        '''Extract all resources of type cls (must be a subclass of
+        ADMSResource). The triples found are removed from the graph.
+        The extraction is recursive.'''
+        assert issubclass(cls, ADMSResource)
+        known = {}
+        result = []
+        for type_uri in cls.TYPE_URIS:
+            for uri in list(self.subjects(RDF.type, type_uri)):
+                result.append(self.extract(uri, known))
+        return result
 
 
 class ADMSProperty:
 
-    '''Property of a domain model class.'''
+    '''Property of a domain model class.
 
-    def __init__(self, uri, rng=None, min=0, max=-1):
-        assert isinstance(uri, URIRef)
-        self.uri = uri
+    Attributes:
+    uris -- the set of URIRef of the property
+    invuris -- the set of URIRef of the inverse property or None
+    rng -- the range, a namespace, a tuple of namespaces, a class, or None
+    min -- the minimum cardinality
+    max -- the maximum cardinality or None if infinite
+    '''
+
+    def __init__(self, *uris, invuris=None, rng=None, min=0, max=None):
+        self.uris = set(uris)
+        assert all(isinstance(uri, URIRef) for uri in self.uris)
+        if invuris is None:
+            self.invuris = {}
+        else:
+            self.invuris = invuris if isinstance(invuris, set) else {invuris}
+            assert all(isinstance(uri, URIRef) for uri in self.invuris)
         self.rng = rng
         self.min = min
         self.max = max
 
+    def __repr__(self):
+        return '<' + self.__class__.__name__ + ' ' + \
+               ", ".join(str(uri) for uri in self.uris) + '>'
+
     def _warning(self, g, subject, msg, *values):
         msg = "Class %s, property %s for %s: " + msg
-        values = [subject.__class__.__name__, g.qname(self.uri), subject.uri] + \
+        values = [subject.__class__.__name__,
+                  ", ".join(g.qname(uri) for uri in self.uris),
+                  subject.uri] + \
                  list(values)
         logging.warning(msg, *values)
 
     def _add_to_graph(self, g, subject, values, memo):
-        if isinstance(values, list) or isinstance(values, set):
-            values = [v for v in values if v is not None]
-        elif values is not None:
-            values = [values]
-        else:
-            values = []
+        if values is None:
+            values = {}
+        elif not isinstance(values, set):
+            values = {values}
         if len(values) < self.min:
             self._warning(g, subject, "missing values, got %d, need %d.",
                           len(values), self.min)
-        elif self.max > 0 and len(values) > self.max:
+        elif self.max is not None and len(values) > self.max:
             self._warning(g, subject, "too many values, got %d, max %d.",
                           len(values), self.max)
         for value in values:
@@ -139,12 +221,24 @@ class ADMSProperty:
                           "invalid value %s of type %s, expected %s.",
                           value, type(value).__name__, self.rng)
         # Add to graph
-        g.add((subject.uri, self.uri, obj))
+        for uri in self.uris:
+            g.add((subject.uri, uri, obj))
+        if self.invuris:
+            if isinstance(obj, Literal):
+                self._warning(g, subject,
+                              "cannot create inverse property for %s.", obj)
+            else:
+                for uri in self.invuris:
+                    g.add((obj, uri, subject.uri))
 
 
 class ADMSResource:
 
-    '''Super-class for domain model classes.'''
+    '''Super-class for domain model classes.
+    All subclasses shall have the @adms_type_uri(uri) decorator.
+
+    Values for properties may be None, a single value, or a set of values.
+    '''
 
     def __init__(self, uri):
         assert isinstance(uri, URIRef)
@@ -154,22 +248,43 @@ class ADMSResource:
                 setattr(self, name, None)
 
     def __repr__(self):
-        return '<' + self.__class__.__name__ + ' ' + self.uri + '>'
+        return '<' + self.__class__.__name__ + ' ' + str(self.uri) + '>'
 
-    def _add_to_graph(self, g, memo=None):
+    def __hash__(self):
+        return hash(self.uri)
+
+    def __eq__(self, obj):
+        if obj is None or not isinstance(obj, self.__class__):
+            return False
+        return self.uri == obj.uri
+
+    @classmethod
+    def properties(cls):
+        '''Yield all (name, properties) tuples of this resource.'''
+        for name, prop in cls.__dict__.items():
+            if isinstance(prop, ADMSProperty):
+                yield (name, prop)
+
+    def _add_to_graph(self, g, memo):
         '''Add this resource and all depending ones to the graph g.'''
-        if memo is None:
-            memo = set()
         if self.uri in memo:
             return
         memo.add(self.uri)
-        g.add((self.uri, RDF.type, self.TYPE_URI))
+        for type_uri in self.TYPE_URIS:
+            g.add((self.uri, RDF.type, type_uri))
         for name, prop in self.__class__.__dict__.items():
             if not isinstance(prop, ADMSProperty):
                 continue
-            value = getattr(self, name)
-            if isinstance(value, list) or isinstance(value, set):
-                for v in value:
-                    prop._add_to_graph(g, self, v, memo)
-            else:
-                prop._add_to_graph(g, self, value, memo)
+            prop._add_to_graph(g, self, getattr(self, name), memo)
+
+
+def adms_type_uri(*uris):
+    '''Decorator for ADMSResource.'''
+    assert len(uris) >= 1
+    def f(cls):
+        cls.TYPE_URIS = uris
+        for uri in uris:
+            assert uri not in ADMS_RESOURCES
+            ADMS_RESOURCES[uri] = cls
+        return cls
+    return f
