@@ -18,36 +18,44 @@
 # See the Licence for the specific language governing
 # permissions and limitations under the Licence.
 
-import logging
-import datetime
-
 from .. import *
+
+URL = "http://www.w3.org/2012/06/tr2adms/adms"
 
 QUERIES = [
 # Remove double statuses
 """
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
 DELETE {
   ?asset adms:status ?other
 } WHERE {
-  ?asset rdf:type adms:SemanticAsset ;
+  ?asset a adms:SemanticAsset ;
          adms:status <http://purl.org/adms/status/Deprecated> ;
          adms:status ?other
   FILTER(?other != <http://purl.org/adms/status/Deprecated>)
 }
 """,
-# Create distributions and update asset
+# Fix dcterms:created dates
 """
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-INSERT {
+DELETE {
+  ?s dcterms:created ?str
+} INSERT {
+  ?s dcterms:created ?date
+} WHERE {
+  ?s dcterms:created ?str
+  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00")) AS ?date)
+}
+""",
+# Split assets and distributions
+"""
+DELETE {
+  ?asset a adms:SemanticAssetDistribution ;
+         radion:distribution ?asset ;
+         dcterms:format ?format ;
+         dcterms:license ?license ;
+         dcterms:type ?type ;
+         dcterms:title ?title ;
+         adms:accessURL ?accessURL .
+} INSERT {
   ?d a adms:SemanticAssetDistribution ;
      radion:distributionOf ?asset ;
      adms:accessURL ?asset ;
@@ -55,59 +63,33 @@ INSERT {
      dcterms:license ?license ;
      dcterms:format <http://purl.org/NET/mediatypes/text/html> ;
      adms:status ?status .
-  ?asset radion:distribution ?d .
+  ?asset radion:distribution ?d ;
+         dcterms:type <http://purl.org/adms/assettype/Schema> ;
+         dcat:theme <http://eurovoc.europa.eu/100150> .
 } WHERE {
-  ?asset rdf:type adms:SemanticAsset ;
+  ?asset a adms:SemanticAsset ;
          rdfs:label ?name ;
+         dcterms:format ?format ;
          dcterms:license ?license ;
+         dcterms:type ?type ;
+         dcterms:title ?title ;
+         adms:accessURL ?accessURL ;
          adms:status ?status .
   BIND(IRI(CONCAT(str(?asset), "?type=distribution")) AS ?d)
 }
 """,
-# Delete unnecessary properties for semantic assets
+# Add dcterms:modified if it does not exist
 """
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-DELETE {
-  ?asset rdf:type adms:SemanticAssetDistribution ;
-         radion:distribution ?asset ;
-         dcterms:format ?format ;
-         dcterms:license ?license ;
-         dcterms:type ?type ;
-         dcterms:title ?title ;
-         adms:accessURL ?accessURL .
-} WHERE {
-  ?asset rdf:type adms:SemanticAsset ;
-         dcterms:format ?format ;
-         dcterms:license ?license ;
-         dcterms:type ?type ;
-         dcterms:title ?title ;
-         adms:accessURL ?accessURL .
-}
-""",
-# Add asset type to semantic assets
-"""
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
 INSERT {
-  ?asset dcterms:type <http://purl.org/adms/assettype/Schema> .
+  ?asset dcterms:modified ?date .
 } WHERE {
-  ?asset rdf:type adms:SemanticAsset .
+  ?asset a adms:SemanticAsset ;
+         dcterms:created ?date .
+  FILTER NOT EXISTS { ?asset dcterms:modified ?modified }
 }
 """,
 # Delete empty description properties from semantic assets
 """
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
 DELETE {
   ?s dcterms:description ?desc
 } WHERE {
@@ -117,30 +99,31 @@ DELETE {
 """,
 # Add description for semantic assets without description
 """
-PREFIX adms: <http://www.w3.org/ns/adms#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX radion: <http://www.w3.org/ns/radion#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
 INSERT {
   ?asset dcterms:description "The description of this asset is not available"@en
 } WHERE {
-  ?asset rdf:type adms:SemanticAsset
+  ?asset a adms:SemanticAsset
   FILTER NOT EXISTS { ?asset dcterms:description ?description }
+}
+""",
+# Add missing data
+"""
+INSERT DATA {
+  <http://www.w3.org/data#W3C> a foaf:Agent ;
+    foaf:name "World Wide Web Consortium" ;
+    dcterms:type <http://purl.org/adms/publishertype/StandardisationBody> .
+  <http://www.w3.org/2012/05/cat#DocLicense> dcterms:type
+    <http://purl.org/adms/licencetype/NoDerivativeWork> .
 }
 """
 ]
 
 
 def process():
-    g = Graph.load("http://www.w3.org/2012/06/tr2adms/adms", format='turtle')
+    g = Graph.load(URL, format='turtle')
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         g.update(query)
-    logging.debug("Transforming dcterms:created dates into xsd:dateTime.")
-    for s, p, o in g.triples((None, DCTERMS.created, None)):
-        d = rdflib.Literal(str(o), datatype=XSD.date).value
-        newo = rdflib.Literal(datetime.datetime(d.year, d.month, d.day))
-        g.remove((s,p,o))
-        g.add((s,p,newo))
-    return g
+    logging.debug("Extracting assets from RDF for validation.")
+    assets = g.extract_all(Asset)
+    return Graph(assets)

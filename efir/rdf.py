@@ -42,7 +42,7 @@ class Graph(rdflib.Graph):
 
     '''An RDF graph somewhat specialized for ADMS.'''
 
-    def __init__(self):
+    def __init__(self, data=None):
         rdflib.Graph.__init__(self)
         self.bind('rdf', str(RDF))
         self.bind('rdfs', str(RDFS))
@@ -59,6 +59,8 @@ class Graph(rdflib.Graph):
         self.bind('schema', str(SCHEMA))
         self.bind('spdx', str(SPDX))
         self.bind('xhv', str(XHV))
+        if data is not None:
+            self.add(data)
 
     @classmethod
     def load(cls, name, format='xml'):
@@ -79,6 +81,11 @@ class Graph(rdflib.Graph):
             item._add_to_graph(self, memo)
         else:
             super().add(item)
+
+    def update(self, query):
+        query = "".join("PREFIX " + name + ": <" + str(uri) + ">\n"
+                        for name, uri in self.namespaces()) + query
+        super().update(query)
 
     def extract(self, uri, known={}):
         '''Extract resource uri from the graph. The triples found are removed.
@@ -201,7 +208,7 @@ class ADMSProperty:
         elif issubclass(self.rng, rdflib.term.Identifier):
             return isinstance(obj, self.rng)
         elif issubclass(self.rng, ADMSResource):
-            return isinstance(value, self.rng)
+            return isinstance(value, self.rng) or isinstance(obj, URIRef)
         elif isinstance(obj, Literal):
             return isinstance(obj.toPython(), self.rng)
         else:
