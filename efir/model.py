@@ -45,7 +45,7 @@ PublisherType = rdflib.Namespace("http://purl.org/adms/publishertype/")
 class Publisher(ADMSResource):
 
     # Recommended properties
-    name            = ADMSProperty(RDFS.label, also=FOAF.name, rng=Literal)
+    name            = ADMSProperty(RDFS.label, also=FOAF.name, rng=ADMSProperty.UNIQUETEXT)
     type            = ADMSProperty(DCTERMS.type, rng=PublisherType)
 
     def __init__(self, uri):
@@ -58,8 +58,8 @@ class LicenseDocument(ADMSResource):
     # Mandatory properties
     type            = ADMSProperty(DCTERMS.type, rng=LicenceType, min=1, max=1)
     # Recommended properties
-    label           = ADMSProperty(RDFS.label, rng=Literal)
-    description     = ADMSProperty(DCTERMS.description, rng=Literal)
+    label           = ADMSProperty(RDFS.label, rng=ADMSProperty.UNIQUETEXT)
+    description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT)
 
     def __init__(self, uri):
         ADMSResource.__init__(self, uri)
@@ -70,19 +70,19 @@ class AssetDistribution(ADMSResource):
 
     # Mandatory properties
     accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=URIRef, min=1)
+    status          = ADMSProperty(ADMS.status, rng=Status, min=1, max=1)
     # Recommended properties
-    status          = ADMSProperty(ADMS.status, rng=Status, max=1)
     downloadURL     = ADMSProperty(DCAT.downloadURL, rng=URIRef)
     mediaType       = ADMSProperty(DCAT.mediaType, rng=MediaType, max=1)
     license         = ADMSProperty(DCTERMS.license, rng=LicenseDocument, max=1)
     # Optional properties
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
-    description     = ADMSProperty(DCTERMS.description, rng=Literal)
+    description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT)
     format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, max=1)
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
-    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal)
+    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=ADMSProperty.UNIQUETEXT)
     fileSize        = ADMSProperty(SCHEMA.fileSize, max=1)
     checksum        = ADMSProperty(SPDX.checksum, max=1)
     tagURL          = ADMSProperty(ADMSSW.tagURL, max=1)
@@ -96,17 +96,17 @@ class Asset(ADMSResource):
 
     # Mandatory properties
     theme           = ADMSProperty(also=DCAT.theme, rng=Eurovoc, min=1)
-    description     = ADMSProperty(DCTERMS.description, rng=Literal, min=1)
+    description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT, min=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
-    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal, min=1)
+    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=ADMSProperty.UNIQUETEXT, min=1)
     type            = ADMSProperty(DCTERMS.type, rng=(AssetType,SolutionType), min=1)
+    status          = ADMSProperty(ADMS.status, rng=Status, min=1, max=1)
     # Recommended properties
-    status          = ADMSProperty(ADMS.status, rng=Status, max=1)
     interoperabilityLevel = ADMSProperty(ADMS.interoperabilityLevel, rng=InteroperabilityLevel)
     contactPoint    = ADMSProperty(DCAT.contactPoint, max=1)
     distribution    = ADMSProperty(RADION.distribution, inv=RADION.distributionOf, rng=AssetDistribution)
-    keyword         = ADMSProperty(DCAT.keyword, rng=Literal)
+    keyword         = ADMSProperty(DCAT.keyword, rng=ADMSProperty.TEXT)
     landingPage     = ADMSProperty(DCAT.landingPage, max=1)
     language        = ADMSProperty(DCTERMS.language, max=1)
     related         = ADMSProperty(DCTERMS.relation, rng=URIRef)
@@ -132,6 +132,17 @@ class Asset(ADMSResource):
     def __init__(self, uri):
         ADMSResource.__init__(self, uri)
 
+    def _validate(self, result):
+        # Check versions
+        next = self.get_values(Asset.next)
+        prev = self.get_values(Asset.prev)
+        if self in next:
+            result.add(Asset.next, "Version loop", self, self, None)
+        if self in prev:
+            result.add(Asset.prev, "Version loop", self, self, None)
+        for value in next & prev:
+            result.add(Asset.next, "Version cycle", self, value, None)
+
 Asset.included.rng = Asset
 Asset.last.rng = Asset
 Asset.next.rng = Asset
@@ -145,8 +156,8 @@ class Repository(ADMSResource):
 
     # Mandatory properties
     accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=URIRef, min=1)
-    title           = ADMSProperty(RDFS.label, also=DCTERMS.title, rng=Literal, min=1)
-    description     = ADMSProperty(DCTERMS.description, rng=Literal, min=1)
+    title           = ADMSProperty(RDFS.label, also=DCTERMS.title, rng=ADMSProperty.UNIQUETEXT, min=1)
+    description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT, min=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     # Recommended properties

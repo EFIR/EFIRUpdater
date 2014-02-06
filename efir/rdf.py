@@ -154,11 +154,17 @@ class ADMSProperty:
     parse_uris -- the set of recognized URIRef of the property
     inv -- the set of URIRef of the inverse property
     parse_inv -- the set of recognized URIRef of the inverse property
-    rng -- the range, a namespace, a class, or None; multiple options may be
-           given in a tuple
+    rng -- the range: a namespace, a class, a special value, or None; multiple
+           options may be given in a tuple
     min -- the minimum cardinality
     max -- the maximum cardinality or None if infinite
     '''
+
+    # Range of Literals with mandatory language tags
+    TEXT = "text"
+
+    # Range of Literals with mandatory unique language tags
+    UNIQUETEXT = "unique text"
 
     def __init__(self, *uris, also=None, inv=None, also_inv=None,
                  rng=None, min=0, max=None):
@@ -241,7 +247,10 @@ class ADMSProperty:
                     ranges = (ranges,)
                 obj = self._to_rdf(value)
                 for rng in ranges:
-                    if isinstance(rng, rdflib.Namespace):
+                    if rng in (ADMSProperty.TEXT, ADMSProperty.UNIQUETEXT):
+                        if isinstance(obj, Literal) and obj.language is not None:
+                            break
+                    elif isinstance(rng, rdflib.Namespace):
                         if isinstance(obj, URIRef) and obj.startswith(rng):
                             break
                     elif issubclass(rng, rdflib.term.Identifier):
@@ -260,6 +269,16 @@ class ADMSProperty:
             if self.inv and isinstance(obj, Literal):
                 result.add(self, "Literal subject in inverse property",
                            resource, obj.n3(), "resource")
+        # Check for unique language tags
+        if self.rng == ADMSProperty.UNIQUETEXT:
+            languages = set()
+            for value in values:
+                if isinstance(value, Literal) and value.language is not None:
+                    if value.language in languages:
+                        result.add(self, "Multiple values for a language",
+                                   resource, value.n3(), None)
+                        break
+                    languages.add(value.language)
         return result
 
     def _add_to_graph(self, resource, g, memo):
@@ -398,8 +417,9 @@ class ValidationResult:
     def log(self):
         '''Write the validation errors to the log.'''
         for (prop, message), instances in self.errors.items():
-            instances = ["(" + str(resource.uri) + " has " +
-                         str(actual) + ", expected " + str(expected) + ")"
+            instances = ["(" + str(resource.uri) + " has " + str(actual) +
+                         (", expected " + str(expected) if expected else "") +
+                         ")"
                          for resource, actual, expected in instances]
             line = str(prop) + ": " + message + " " + ", ".join(instances[:3])
             if len(instances) > 3:
