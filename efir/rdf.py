@@ -148,11 +148,14 @@ class ADMSProperty:
     '''Property of a domain model class.
 
     Attributes:
+    name -- the name of the property (set by @adms_resource)
+    resource_cls -- the containing resource class (set by @adms_resource)
     uris -- the set of URIRef of the property
     parse_uris -- the set of recognized URIRef of the property
     inv -- the set of URIRef of the inverse property
     parse_inv -- the set of recognized URIRef of the inverse property
-    rng -- the range, a namespace, a tuple of namespaces, a class, or None
+    rng -- the range, a namespace, a class, or None; multiple options may be
+           given in a tuple
     min -- the minimum cardinality
     max -- the maximum cardinality or None if infinite
     '''
@@ -186,81 +189,94 @@ class ADMSProperty:
         self.min = min
         self.max = max
 
+    def __str__(self):
+        return self.resource_cls.__name__ + '.' + self.name
+
     def __repr__(self):
-        return '<' + self.__class__.__name__ + ' ' + \
-               ", ".join(str(uri) for uri in self.uris) + '>'
+        return '<Property ' + str(self) + '>'
 
-    def _warning(self, g, subject, msg, *values):
-        msg = "Class %s, property %s for %s: " + msg
-        values = [subject.__class__.__name__,
-                  ", ".join(g.qname(uri) for uri in self.uris),
-                  subject.uri] + \
-                 list(values)
-        logging.warning(msg, *values)
+    def __hash__(self):
+        return hash(self.resource_cls) | hash(self.name)
 
-    def _add_to_graph(self, g, subject, values, memo):
-        if values is None:
-            values = {}
-        elif not isinstance(values, set):
-            values = {values}
+    def __eq__(self, obj):
+        if obj is None or not isinstance(obj, self.__class__):
+            return False
+        return self.resource_cls == obj.resource_cls and self.name == obj.name
+
+    def _to_rdf(self, value):
+        '''Return the RDF value of value.'''
+        if isinstance(value, rdflib.term.Identifier):
+            return value
+        elif isinstance(value, ADMSResource):
+            return value.uri
+        else:
+            return Literal(value)
+
+    def validate(self, resource, deep=True, result=None):
+        '''Validate this property.
+
+        Arguments:
+        resource -- the subject (an ADMSResource's subclass instance)
+        deep -- if True, validate values recursively
+        result -- the ValidationResult object
+        '''
+        assert isinstance(resource, self.resource_cls)
+        if result is None:
+            result = ValidationResult()
+        values = resource.get_values(self)
+        # Check cardinality
         if len(values) < self.min:
-            self._warning(g, subject, "missing values, got %d, need %d.",
-                          len(values), self.min)
+            result.add(self, "Missing values", resource, len(values), self.min)
         elif self.max is not None and len(values) > self.max:
-            self._warning(g, subject, "too many values, got %d, max %d.",
-                          len(values), self.max)
+            result.add(self, "Too many values", resource, len(values), self.max)
+        # Check individual values
         for value in values:
-            self._add_value(g, subject, value, memo)
+            # Recursive check
+            if deep and isinstance(value, ADMSResource):
+                value.validate(deep=deep, result=result)
+            # Range check
+            if self.rng is not None:
+                ranges = self.rng
+                if not isinstance(ranges, tuple):
+                    ranges = (ranges,)
+                obj = self._to_rdf(value)
+                for rng in ranges:
+                    if isinstance(rng, rdflib.Namespace):
+                        if isinstance(obj, URIRef) and obj.startswith(rng):
+                            break
+                    elif issubclass(rng, rdflib.term.Identifier):
+                        if isinstance(obj, rng):
+                            break
+                    elif issubclass(rng, ADMSResource):
+                        if isinstance(value, rng) or isinstance(obj, URIRef):
+                            break
+                    elif isinstance(obj, Literal):
+                        if isinstance(obj.toPython(), rng):
+                            break
+                else:
+                    result.add(self, "Wrong type", resource,
+                               obj.n3(), self.rng)
+            # Inverse property check
+            if self.inv and isinstance(obj, Literal):
+                result.add(self, "Literal subject in inverse property",
+                           resource, obj.n3(), "resource")
+        return result
 
-    def _validate(self, value, obj, rng=None):
-        if rng is None:
-            rng = self.rng
-        if rng is None:
-            return True
-        if isinstance(rng, list) or isinstance(rng, tuple):
-            for r in rng:
-                if self._validate(value, obj, r):
-                    return True
-            return False
-        if isinstance(rng, rdflib.Namespace):
-            return isinstance(obj, URIRef) and obj.startswith(self.rng)
-        elif issubclass(self.rng, rdflib.term.Identifier):
-            return isinstance(obj, self.rng)
-        elif issubclass(self.rng, ADMSResource):
-            return isinstance(value, self.rng) or isinstance(obj, URIRef)
-        elif isinstance(obj, Literal):
-            return isinstance(obj.toPython(), self.rng)
-        else:
-            return False
-
-    def _add_value(self, g, subject, value, memo):
-        # Transform value
-        obj = value
-        if isinstance(value, ADMSResource):
-            value._add_to_graph(g, memo)
-            obj = value.uri
-        elif not isinstance(value, rdflib.term.Identifier):
-            obj = Literal(value)
-        # Validate
-        if not self._validate(value, obj):
-            self._warning(g, subject,
-                          "invalid value %s of type %s, expected %s.",
-                          value, type(value).__name__, self.rng)
-        # Add to graph
-        for uri in self.uris:
-            g.add((subject.uri, uri, obj))
-        if self.inv and isinstance(obj, Literal):
-            self._warning(g, subject,
-                          "cannot create inverse property for %s.", obj)
-        else:
+    def _add_to_graph(self, resource, g, memo):
+        for value in resource.get_values(self):
+            if isinstance(value, ADMSResource):
+                value._add_to_graph(g, memo)
+            obj = self._to_rdf(value)
+            for uri in self.uris:
+                g.add((resource.uri, uri, obj))
             for uri in self.inv:
-                g.add((obj, uri, subject.uri))
+                g.add((obj, uri, resource.uri))
 
 
 class ADMSResource:
 
     '''Super-class for domain model classes.
-    All subclasses shall have the @adms_type_uri(uri) decorator.
+    All subclasses shall have the @adms_resource(uri) decorator.
 
     Values for properties may be None, a single value, or a set of values.
     '''
@@ -290,6 +306,36 @@ class ADMSResource:
             if isinstance(prop, ADMSProperty):
                 yield (name, prop)
 
+    def get_values(self, prop):
+        '''Return the set of values for property prop (a string or ADMSProperty
+        instance.'''
+        if isinstance(prop, ADMSProperty):
+            prop = prop.name
+        values = getattr(self, prop)
+        if values is None:
+            values = set()
+        elif not isinstance(values, set):
+            values = {values}
+        return values
+
+    def validate(self, deep=True, result=None):
+        '''Validate this resource and all its values recursively.
+
+        Arguments:
+        deep -- if True, validate values recursively
+        result -- the ValidationResult object
+        '''
+        if result is None:
+            result = ValidationResult()
+        if self in result.checked:
+            return result
+        result.checked.add(self)
+        for name, prop in self.properties():
+            prop.validate(self, deep=deep, result=result)
+        if hasattr(self, '_validate'):
+            self._validate(result)
+        return result
+
     def _add_to_graph(self, g, memo):
         '''Add this resource and all depending ones to the graph g.'''
         if self.uri in memo:
@@ -297,13 +343,11 @@ class ADMSResource:
         memo.add(self.uri)
         for type_uri in self.TYPE_URIS:
             g.add((self.uri, RDF.type, type_uri))
-        for name, prop in self.__class__.__dict__.items():
-            if not isinstance(prop, ADMSProperty):
-                continue
-            prop._add_to_graph(g, self, getattr(self, name), memo)
+        for name, prop in self.properties():
+            prop._add_to_graph(self, g, memo)
 
 
-def adms_type_uri(*uris, also=None):
+def adms_resource(*uris, also=None):
     '''Decorator for ADMSResource.
 
     Arguments:
@@ -325,5 +369,51 @@ def adms_type_uri(*uris, also=None):
         for uri in parse_uris:
             assert uri not in ADMS_RESOURCES
             ADMS_RESOURCES[uri] = cls
+        for name, prop in cls.properties():
+            prop.name = name
+            prop.resource_cls = cls
         return cls
     return f
+
+
+class ValidationResult:
+
+    '''The result of a validation.'''
+
+    def __init__(self):
+        self.errors = {}
+        self.checked = set()  # set of checked resources
+
+    def __bool__(self):
+        return not self.errors
+
+    def add(self, prop, message, resource, actual, expected):
+        '''Add a validation error.'''
+        key = (prop, message)
+        value = (resource, actual, expected)
+        if key not in self.errors:
+            self.errors[key] = []
+        self.errors[key].append(value)
+
+    def log(self):
+        '''Write the validation errors to the log.'''
+        for (prop, message), instances in self.errors.items():
+            instances = ["(" + str(resource.uri) + " has " +
+                         str(actual) + ", expected " + str(expected) + ")"
+                         for resource, actual, expected in instances]
+            line = str(prop) + ": " + message + " " + ", ".join(instances[:3])
+            if len(instances) > 3:
+                line += ", and %d more" % (len(instances) - 3)
+            logging.warning(line)
+            logging.debug("All errors: " + ", ".join(instances))
+
+
+def validate(resources):
+    '''Validate a list, tuple or set of resources.'''
+    if isinstance(resources, ADMSResource):
+        return resources.validate()
+    else:
+        result = ValidationResult()
+        for resource in resources:
+            resource.validate(result=result)
+        return result

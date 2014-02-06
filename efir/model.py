@@ -41,7 +41,7 @@ PublisherType = rdflib.Namespace("http://purl.org/adms/publishertype/")
 
 ## Classes
 
-@adms_type_uri(DCTERMS.Agent, also=FOAF.Agent)
+@adms_resource(DCTERMS.Agent, also=FOAF.Agent)
 class Publisher(ADMSResource):
 
     # Recommended properties
@@ -52,7 +52,7 @@ class Publisher(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
-@adms_type_uri(DCTERMS.LicenseDocument)
+@adms_resource(DCTERMS.LicenseDocument)
 class LicenseDocument(ADMSResource):
 
     # Mandatory properties
@@ -65,7 +65,7 @@ class LicenseDocument(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
-@adms_type_uri(ADMS.SemanticAssetDistribution, also=ADMS.AssetDistribution)
+@adms_resource(ADMS.SemanticAssetDistribution, also=ADMS.AssetDistribution)
 class AssetDistribution(ADMSResource):
 
     # Mandatory properties
@@ -91,7 +91,7 @@ class AssetDistribution(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
-@adms_type_uri(ADMS.SemanticAsset, also=ADMS.Asset)
+@adms_resource(ADMS.SemanticAsset, also=ADMS.Asset)
 class Asset(ADMSResource):
 
     # Mandatory properties

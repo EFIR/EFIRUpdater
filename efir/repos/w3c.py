@@ -126,4 +126,5 @@ def process():
         g.update(query)
     logging.debug("Extracting assets from RDF for validation.")
     assets = g.extract_all(Asset)
+    validate(assets).log()
     return Graph(assets)
