@@ -88,7 +88,7 @@ class Graph(rdflib.Graph):
         super().update(query)
 
     def extract(self, uri, known={}):
-        '''Extract resource uri from the graph. The triples found are removed.
+        '''Extract resource uri from the graph.
         The extraction is recursive. Known (i.e., already extracted) objects
         are fetched from and put into the known dictionary.
         Uri may also be a literal, in which case it is returned as is.
@@ -111,18 +111,14 @@ class Graph(rdflib.Graph):
             return uri
         resource = cls(uri)
         known[uri] = resource
-        for type_uri in resource.PARSE_URIS:
-            self.remove((uri, RDF.type, type_uri))
         for name, prop in resource.properties():
             values = set()
             for prop_uri in prop.parse_uris:
                 values.update(self.extract(obj, known)
                               for obj in self.objects(uri, prop_uri))
-                self.remove((uri, prop_uri, None))
             for prop_uri in prop.parse_inv:
                 values.update(self.extract(subj, known)
                               for subj in self.subjects(prop_uri, uri))
-                self.remove((None, prop_uri, uri))
             if len(values) == 0:
                 continue
             if len(values) == 1:
@@ -132,8 +128,7 @@ class Graph(rdflib.Graph):
 
     def extract_all(self, cls):
         '''Extract all resources of type cls (must be a subclass of
-        ADMSResource). The triples found are removed from the graph.
-        The extraction is recursive.'''
+        ADMSResource). The extraction is recursive.'''
         assert issubclass(cls, ADMSResource)
         known = {}
         result = []
