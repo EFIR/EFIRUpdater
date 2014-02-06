@@ -33,7 +33,8 @@ parser.add_argument('repository', nargs='?',
                     help="repository to process")
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
+logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
+                    format="[%(asctime)s] %(levelname)s %(message)s")
 
 if args.list:
     for name in sorted(processors.keys()):
