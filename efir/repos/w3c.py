@@ -126,4 +126,6 @@ def process():
         logging.debug("Running update query %s", query)
         g.update(query)
     logging.debug("Extracting repository.")
-    return g.extract(URIRef("http://www.w3.org/TR/"))
+    repo = g.extract(URIRef("http://www.w3.org/TR/"))
+    repo.modified = get_modified(URL)
+    return repo
