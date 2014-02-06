@@ -66,9 +66,10 @@ class Graph(rdflib.Graph):
     def load(cls, name, format='xml'):
         '''Load RDF file or URL and return a Graph object.'''
         logging.debug("Loading RDF graph %s.", name)
+        uri = name if is_url(name) else "http://localhost/"
         g = cls()
         with open_data(name, binary=True) as f:
-            g.parse(f, format=format)
+            g.parse(f, format=format, publicID=uri)
         return g
 
     def add(self, item, memo=None):
