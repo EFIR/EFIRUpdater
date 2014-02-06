@@ -56,10 +56,10 @@ class Publisher(ADMSResource):
 class LicenseDocument(ADMSResource):
 
     # Mandatory properties
-    type            = ADMSProperty(DCTERMS.type, min=1, max=1)
+    type            = ADMSProperty(DCTERMS.type, rng=LicenceType, min=1, max=1)
     # Recommended properties
-    label           = ADMSProperty(RDFS.label)
-    description     = ADMSProperty(DCTERMS.description)
+    label           = ADMSProperty(RDFS.label, rng=Literal)
+    description     = ADMSProperty(DCTERMS.description, rng=Literal)
 
     def __init__(self, uri):
         ADMSResource.__init__(self, uri)
@@ -79,7 +79,7 @@ class AssetDistribution(ADMSResource):
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
     description     = ADMSProperty(DCTERMS.description, rng=Literal)
     format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, max=1)
-    issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime)
+    issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
     title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal)
@@ -97,7 +97,7 @@ class Asset(ADMSResource):
     # Mandatory properties
     theme           = ADMSProperty(also=DCAT.theme, rng=Eurovoc, min=1)
     description     = ADMSProperty(DCTERMS.description, rng=Literal, min=1)
-    modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1)
+    modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
     title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=Literal, min=1)
     type            = ADMSProperty(DCTERMS.type, rng=(AssetType,SolutionType), min=1)
