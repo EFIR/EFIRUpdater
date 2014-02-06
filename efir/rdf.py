@@ -111,15 +111,15 @@ class Graph(rdflib.Graph):
             return uri
         resource = cls(uri)
         known[uri] = resource
-        for type_uri in resource.TYPE_URIS:
+        for type_uri in resource.PARSE_URIS:
             self.remove((uri, RDF.type, type_uri))
         for name, prop in resource.properties():
             values = set()
-            for prop_uri in prop.uris:
+            for prop_uri in prop.parse_uris:
                 values.update(self.extract(obj, known)
                               for obj in self.objects(uri, prop_uri))
                 self.remove((uri, prop_uri, None))
-            for prop_uri in prop.invuris:
+            for prop_uri in prop.parse_inv:
                 values.update(self.extract(subj, known)
                               for subj in self.subjects(prop_uri, uri))
                 self.remove((None, prop_uri, uri))
@@ -137,7 +137,7 @@ class Graph(rdflib.Graph):
         assert issubclass(cls, ADMSResource)
         known = {}
         result = []
-        for type_uri in cls.TYPE_URIS:
+        for type_uri in cls.PARSE_URIS:
             for uri in list(self.subjects(RDF.type, type_uri)):
                 result.append(self.extract(uri, known))
         return result
@@ -149,20 +149,39 @@ class ADMSProperty:
 
     Attributes:
     uris -- the set of URIRef of the property
-    invuris -- the set of URIRef of the inverse property or None
+    parse_uris -- the set of recognized URIRef of the property
+    inv -- the set of URIRef of the inverse property
+    parse_inv -- the set of recognized URIRef of the inverse property
     rng -- the range, a namespace, a tuple of namespaces, a class, or None
     min -- the minimum cardinality
     max -- the maximum cardinality or None if infinite
     '''
 
-    def __init__(self, *uris, invuris=None, rng=None, min=0, max=None):
+    def __init__(self, *uris, also=None, inv=None, also_inv=None,
+                 rng=None, min=0, max=None):
+        assert all(isinstance(uri, URIRef) for uri in uris)
         self.uris = set(uris)
-        assert all(isinstance(uri, URIRef) for uri in self.uris)
-        if invuris is None:
-            self.invuris = {}
+        if also is None:
+            self.parse_uris = self.uris
+        elif isinstance(also, URIRef):
+            self.parse_uris = self.uris | {also}
         else:
-            self.invuris = invuris if isinstance(invuris, set) else {invuris}
-            assert all(isinstance(uri, URIRef) for uri in self.invuris)
+            assert all(isinstance(uri, URIRef) for uri in also)
+            self.parse_uris = self.uris | set(also)
+        if inv is None:
+            self.inv = set()
+        elif isinstance(inv, URIRef):
+            self.inv = {inv}
+        else:
+            assert all(isinstance(uri, URIRef) for uri in inv)
+            self.inv = set(inv)
+        if also_inv is None:
+            self.parse_inv = self.inv
+        elif isinstance(also_inv, URIRef):
+            self.parse_inv = self.inv | {also_inv}
+        else:
+            assert all(isinstance(uri, URIRef) for uri in also_inv)
+            self.parse_inv = self.inv | set(also_inv)
         self.rng = rng
         self.min = min
         self.max = max
@@ -230,13 +249,12 @@ class ADMSProperty:
         # Add to graph
         for uri in self.uris:
             g.add((subject.uri, uri, obj))
-        if self.invuris:
-            if isinstance(obj, Literal):
-                self._warning(g, subject,
-                              "cannot create inverse property for %s.", obj)
-            else:
-                for uri in self.invuris:
-                    g.add((obj, uri, subject.uri))
+        if self.inv and isinstance(obj, Literal):
+            self._warning(g, subject,
+                          "cannot create inverse property for %s.", obj)
+        else:
+            for uri in self.inv:
+                g.add((obj, uri, subject.uri))
 
 
 class ADMSResource:
@@ -285,12 +303,26 @@ class ADMSResource:
             prop._add_to_graph(g, self, getattr(self, name), memo)
 
 
-def adms_type_uri(*uris):
-    '''Decorator for ADMSResource.'''
+def adms_type_uri(*uris, also=None):
+    '''Decorator for ADMSResource.
+
+    Arguments:
+    uris -- the type URIs of the resource
+    also -- additional type URIs that are recognized (but not generated)
+    '''
     assert len(uris) >= 1
+    assert all(isinstance(uri, URIRef) for uri in uris)
+    if also is None:
+        parse_uris = uris
+    elif isinstance(also, URIRef):
+        parse_uris = uris + (also,)
+    else:
+        assert all(isinstance(uri, URIRef) for uri in also)
+        parse_uris = uris + tuple(parse_uris)
     def f(cls):
         cls.TYPE_URIS = uris
-        for uri in uris:
+        cls.PARSE_URIS = parse_uris
+        for uri in parse_uris:
             assert uri not in ADMS_RESOURCES
             ADMS_RESOURCES[uri] = cls
         return cls
