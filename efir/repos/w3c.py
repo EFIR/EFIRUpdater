@@ -53,7 +53,6 @@ DELETE {
          dcterms:format ?format ;
          dcterms:license ?license ;
          dcterms:type ?type ;
-         dcterms:title ?title ;
          adms:accessURL ?accessURL .
 } INSERT {
   ?d a adms:SemanticAssetDistribution ;
@@ -112,7 +111,7 @@ INSERT {
 INSERT DATA {
   <http://www.w3.org/TR/> adms:accessURL <http://www.w3.org/TR/> .
   <http://www.w3.org/data#W3C> a foaf:Agent ;
-    foaf:name "World Wide Web Consortium" ;
+    foaf:name "World Wide Web Consortium"@en ;
     dcterms:type <http://purl.org/adms/publishertype/StandardisationBody> .
   <http://www.w3.org/2012/05/cat#DocLicense> dcterms:type
     <http://purl.org/adms/licencetype/NoDerivativeWork> .
