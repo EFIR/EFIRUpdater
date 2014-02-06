@@ -138,3 +138,25 @@ Asset.next.rng = Asset
 Asset.prev.rng = Asset
 Asset.sample.rng = Asset
 Asset.translation.rng = Asset
+
+
+@adms_resource(ADMS.SemanticAssetRepository, also=ADMS.AssetRepository)
+class Repository(ADMSResource):
+
+    # Mandatory properties
+    accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=URIRef, min=1)
+    title           = ADMSProperty(RDFS.label, also=DCTERMS.title, rng=Literal, min=1)
+    description     = ADMSProperty(DCTERMS.description, rng=Literal, min=1)
+    publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
+    modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
+    # Recommended properties
+    dataset         = ADMSProperty(also=DCAT.dataset, inv=DCTERMS.isPartOf, rng=Asset)
+    contactPoint    = ADMSProperty(DCAT.contactPoint, rng=URIRef)
+    themeTaxonomy   = ADMSProperty(DCAT.themeTaxonomy, RADION.themeTaxonomy, rng=Eurovoc)
+    spatial         = ADMSProperty(DCTERMS.spatial, rng=(Country,Place))
+    # Optional properties
+    supportedSchema = ADMSProperty(ADMS.supportedSchema, rng=Asset)
+    issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
+
+    def __init__(self, uri):
+        ADMSResource.__init__(self, uri)

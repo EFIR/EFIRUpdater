@@ -23,6 +23,7 @@ import logging
 import importlib
 
 from .files import *
+from .model import *
 
 class Processor:
 
@@ -38,12 +39,26 @@ class Processor:
     def process(self):
         logging.info("Processing repository %s.", self.name)
         module = importlib.import_module('..repos.' + self.name, __name__)
-        g = module.process()
+        try:
+            repo = module.process()
+        except:
+            logging.exception("Unable to process repository.")
+            return
+        logging.debug("Validating model.")
+        if not isinstance(repo, Repository):
+            logging.error("Result is not a Repository: %s.", repo)
+            return
+        repo.validate().log()
+        logging.debug("Constructing graph")
+        g = Graph(repo)
         filename = os.path.join(OUT_DIR, self.name + '.rdf')
         logging.debug("Serializing result to %s.", filename)
-        os.makedirs(OUT_DIR, exist_ok=True)
-        with open(filename, 'wb') as f:
-            g.serialize(f)
+        try:
+            os.makedirs(OUT_DIR, exist_ok=True)
+            with open(filename, 'wb') as f:
+                g.serialize(f)
+        except:
+            logging.exception("Unable to serialize graph.")
 
 
 processors = {}

@@ -64,6 +64,7 @@ DELETE {
      dcterms:format <http://purl.org/NET/mediatypes/text/html> ;
      adms:status ?status .
   ?asset radion:distribution ?d ;
+         dcterms:isPartOf <http://www.w3.org/TR/> ;
          dcterms:type <http://purl.org/adms/assettype/Schema> ;
          dcat:theme <http://eurovoc.europa.eu/100150> .
 } WHERE {
@@ -109,6 +110,7 @@ INSERT {
 # Add missing data
 """
 INSERT DATA {
+  <http://www.w3.org/TR/> adms:accessURL <http://www.w3.org/TR/> .
   <http://www.w3.org/data#W3C> a foaf:Agent ;
     foaf:name "World Wide Web Consortium" ;
     dcterms:type <http://purl.org/adms/publishertype/StandardisationBody> .
@@ -124,7 +126,5 @@ def process():
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         g.update(query)
-    logging.debug("Extracting assets from RDF for validation.")
-    assets = g.extract_all(Asset)
-    validate(assets).log()
-    return Graph(assets)
+    logging.debug("Extracting repository.")
+    return g.extract(URIRef("http://www.w3.org/TR/"))
