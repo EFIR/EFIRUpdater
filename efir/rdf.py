@@ -97,7 +97,6 @@ class Graph(rdflib.Graph):
             return uri
         if uri in known:
             return known[uri]
-        type_uris = self.objects(uri, RDF.type)
         cls = None
         for type_uri in self.objects(uri, RDF.type):
             if type_uri in ADMS_RESOURCES:

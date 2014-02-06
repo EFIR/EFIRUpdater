@@ -23,7 +23,6 @@ import os.path
 import shutil
 import urllib.request
 import urllib.parse
-import time
 import email.utils
 
 CACHE_DIR = "cache"
