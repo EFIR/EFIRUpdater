@@ -20,6 +20,7 @@
 
 from .. import *
 
+NAME = 'lov'
 URL = "http://lov.okfn.org/dataset/lov/lov.rdf"
 
 CONSTRUCT = """
@@ -156,7 +157,7 @@ INSERT {
 
 
 def process():
-    g = Graph.load(URL, format='xml')
+    g = Graph.load(NAME, URL, format='xml')
     logging.debug("Constructing ADMS graph")
     adms = g.query(CONSTRUCT).graph
     for query in QUERIES:
@@ -164,5 +165,5 @@ def process():
         adms.update(query)
     logging.debug("Extracting repository.")
     repo = adms.extract(URIRef("http://lov.okfn.org/dataset/lov"))
-    repo.modified = get_modified(URL)
+    repo.modified = get_modified(NAME, URL)
     return repo

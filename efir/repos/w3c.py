@@ -20,6 +20,7 @@
 
 from .. import *
 
+NAME = 'w3c'
 URL = "http://www.w3.org/2012/06/tr2adms/adms"
 
 QUERIES = [
@@ -121,11 +122,11 @@ INSERT DATA {
 
 
 def process():
-    g = Graph.load(URL, format='turtle')
+    g = Graph.load(NAME, URL, format='turtle')
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         g.update(query)
     logging.debug("Extracting repository.")
     repo = g.extract(URIRef("http://www.w3.org/TR/"))
-    repo.modified = get_modified(URL)
+    repo.modified = get_modified(NAME, URL)
     return repo

@@ -33,20 +33,20 @@ def is_url(name):
     '''Return True if name appears to be a URL.'''
     return name.startswith('http://') or name.startswith('https://')
 
-def get_filename(name):
+def get_filename(module, name):
     '''Return the filename associated to name (a data file or URL).'''
     if is_url(name):
-        return os.path.join(CACHE_DIR, urllib.parse.quote(name, safe=''))
+        return os.path.join(CACHE_DIR, module, urllib.parse.quote(name, safe=''))
     else:
         return os.path.join(DATA_DIR, name)
 
-def urlopen_cache(url, binary=True):
+def urlopen_cache(module, url, binary=True):
     '''Download url, if not yet in cache, and return a file object.'''
-    cname = get_filename(url)
+    cname = get_filename(module, url)
     if not os.path.exists(cname):
         logging.debug("Downloading %s.", url)
         response = urllib.request.urlopen(url)
-        os.makedirs(CACHE_DIR, exist_ok=True)
+        os.makedirs(os.path.dirname(cname), exist_ok=True)
         with open(cname, 'wb') as f:
             shutil.copyfileobj(response, f)
         if 'Last-Modified' in response.headers:
@@ -56,19 +56,19 @@ def urlopen_cache(url, binary=True):
     logging.debug("Opening %s.", cname)
     return open(cname, 'rb' if binary else 'r')
 
-def open_data(name, binary=True):
+def open_data(module, name, binary=True):
     '''Open a data file or URL (if it begins with http).'''
     if is_url(name):
-        return urlopen_cache(name, binary)
+        return urlopen_cache(module, name, binary)
     else:
-        filename = get_filename(name)
+        filename = get_filename(module, name)
         logging.debug("Opening %s.", filename)
         return open(filename, 'rb' if binary else 'r')
 
-def get_modified(name):
+def get_modified(module, name):
     '''Return a datetime.datetime object with the last modification date of
     name (a data file or URL) or None if unknown.'''
-    filename = get_filename(name) + '=modified'
+    filename = get_filename(module, name) + '=modified'
     if not os.path.exists(filename):
         return None
     with open(filename, 'r') as f:
