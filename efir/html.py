@@ -1,4 +1,4 @@
-# Common module for EFIR processors
+# HTML scraping utilities
 #
 # Copyright 2014 PwC EU Services
 #
@@ -18,8 +18,15 @@
 # See the Licence for the specific language governing
 # permissions and limitations under the Licence.
 
+import bs4
 from .files import *
-from .rdf import *
-from .model import *
-from .processor import *
-from .html import *
+
+from urllib.parse import urljoin
+
+class HTMLPage(bs4.BeautifulSoup):
+
+    '''A specialized BeautifulSoup.'''
+
+    def __init__(self, module, url):
+        '''Load a web page located at url.'''
+        bs4.BeautifulSoup.__init__(self, open_data(module, url, binary=True))
