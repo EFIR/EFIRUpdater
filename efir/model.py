@@ -125,7 +125,7 @@ class Asset(ADMSResource):
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
     documentation   = ADMSProperty(FOAF.page)
     versionInfo     = ADMSProperty(OWL.versioninfo, rng=Literal)
-    altLabel        = ADMSProperty(SKOS.altLabel, rng=Literal)
+    altLabel        = ADMSProperty(DCTERMS.alternative, also=SKOS.altLabel, rng=Literal)
     describedBy     = ADMSProperty(WRDS.describedBy, max=1)
     metrics         = ADMSProperty(ADMSSW.metrics)
 

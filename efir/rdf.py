@@ -83,6 +83,14 @@ class Graph(rdflib.Graph):
         else:
             super().add(item)
 
+    def query(self, *args, **kwargs):
+        result = super().query(*args, **kwargs)
+        if result.graph is not None:
+            g = Graph()
+            g += result.graph
+            result.graph = g
+        return result
+
     def update(self, query):
         query = "".join("PREFIX " + name + ": <" + str(uri) + ">\n"
                         for name, uri in self.namespaces()) + query
