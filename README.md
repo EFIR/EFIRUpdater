@@ -8,12 +8,30 @@ available on the Joinup platform.
 [EFIR]: https://joinup.ec.europa.eu/catalogue/repository
 
 
+Prerequisites
+--------------
+
+You will need a [Python][] 3.3 or later interpreter with the following
+additional modules:
+
+* [rdflib][] 4
+* [isodate][]
+* [BeautifulSoup 4][]
+* [lxml][]
+
+[Python]: http://python.org/
+[rdflib]: https://pypi.python.org/pypi/rdflib
+[isodate]: https://pypi.python.org/pypi/isodate
+[BeautifulSoup 4]: https://pypi.python.org/pypi/beautifulsoup4
+[lxml]: https://pypi.python.org/pypi/lxml
+
+
 Usage
 ------
 
 Run the following command in the root of the repository to get the usage notice.
 
-    python3 -m efir -h
+    python -m efir -h
 
 *Note: all commands shall be executed from the root of the repository.*
 
