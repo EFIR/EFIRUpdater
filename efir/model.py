@@ -30,13 +30,15 @@ Status = rdflib.Namespace("http://purl.org/adms/status/")
 #MediaType = rdflib.Namespace("http://publications.europa.eu/resource/authority/file-type")
 MediaType = rdflib.Namespace("http://purl.org/NET/mediatypes/")
 Eurovoc = rdflib.Namespace("http://eurovoc.europa.eu/")
-Language = rdflib.Namespace("http://publications.europa.eu/resource/authority/language")
-Country = rdflib.Namespace("http://publications.europa.eu/resource/authority/country")
+Language = rdflib.Namespace("http://publications.europa.eu/resource/authority/language/")
+Country = rdflib.Namespace("http://publications.europa.eu/resource/authority/country/")
 Place = rdflib.Namespace("http://publications.europa.eu/resource/authority/place/")
+GeoNames = rdflib.Namespace("http://sws.geonames.org/")
 AssetType = rdflib.Namespace("http://purl.org/adms/assettype/")
 SolutionType = rdflib.Namespace("http://purl.org/adms/solutiontype/")
 LicenceType = rdflib.Namespace("http://purl.org/adms/licencetype/")
 PublisherType = rdflib.Namespace("http://purl.org/adms/publishertype/")
+Language = rdflib.Namespace("http://id.loc.gov/vocabulary/iso639-1/")
 
 
 ## Classes
@@ -108,9 +110,9 @@ class Asset(ADMSResource):
     distribution    = ADMSProperty(RADION.distribution, inv=RADION.distributionOf, rng=AssetDistribution)
     keyword         = ADMSProperty(DCAT.keyword, rng=ADMSProperty.TEXT)
     landingPage     = ADMSProperty(DCAT.landingPage, max=1)
-    language        = ADMSProperty(DCTERMS.language, max=1)
+    language        = ADMSProperty(DCTERMS.language, rng=Language, max=1)
     related         = ADMSProperty(DCTERMS.relation, rng=URIRef)
-    spatial         = ADMSProperty(DCTERMS.spatial, rng=(Country,Place))
+    spatial         = ADMSProperty(DCTERMS.spatial, rng=(Country,Place,GeoNames))
     temporal        = ADMSProperty(DCTERMS.temporal)
     logo            = ADMSProperty(FOAF.logo, rng=URIRef)
     # Optional properties
@@ -164,7 +166,7 @@ class Repository(ADMSResource):
     dataset         = ADMSProperty(also=DCAT.dataset, inv=DCTERMS.isPartOf, rng=Asset)
     contactPoint    = ADMSProperty(DCAT.contactPoint, rng=URIRef)
     themeTaxonomy   = ADMSProperty(DCAT.themeTaxonomy, RADION.themeTaxonomy, rng=Eurovoc)
-    spatial         = ADMSProperty(DCTERMS.spatial, rng=(Country,Place))
+    spatial         = ADMSProperty(DCTERMS.spatial, rng=(Country,Place,GeoNames))
     # Optional properties
     supportedSchema = ADMSProperty(ADMS.supportedSchema, rng=Asset)
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)

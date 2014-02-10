@@ -30,3 +30,14 @@ class HTMLPage(bs4.BeautifulSoup):
     def __init__(self, module, url):
         '''Load a web page located at url.'''
         bs4.BeautifulSoup.__init__(self, open_data(module, url, binary=True))
+
+
+def get_real_children(tag):
+    '''Yield the children of tag, omitting spaces.'''
+    for child in tag.children:
+        if isinstance(child, str):
+            child = child.strip()
+            if child:
+                yield child
+        else:
+            yield child
