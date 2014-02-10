@@ -71,7 +71,6 @@ def get_items(page, name):
         </div>
     The result is a list of items (the field-item tags).
     '''
-    values = []
     div = page.find(class_="field-field-"+name)
     if div is None:
         return []
