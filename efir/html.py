@@ -21,7 +21,7 @@
 import bs4
 from .files import *
 
-from urllib.parse import urljoin
+from urllib.parse import urlparse, urljoin, unquote
 
 class HTMLPage(bs4.BeautifulSoup):
 
@@ -29,7 +29,25 @@ class HTMLPage(bs4.BeautifulSoup):
 
     def __init__(self, module, url):
         '''Load a web page located at url.'''
+        self.url = url
         bs4.BeautifulSoup.__init__(self, open_data(module, url, binary=True))
+
+    def get_child_links(self):
+        '''Return a set of links that are descendants of this page.'''
+        links = set()
+        url = self.url
+        if not url.endswith('/'):
+            url += "/"
+        parent = urlparse(url)
+        for a in self.find_all('a'):
+            url = urljoin(self.url, a['href'])
+            child = urlparse(url)
+            if child.scheme == parent.scheme and \
+               child.netloc == parent.netloc and \
+               child.path.startswith(parent.path) and \
+               len(child.path) > len(parent.path):
+                links.add(url)
+        return links
 
 
 def get_real_children(tag):
