@@ -89,24 +89,6 @@ INSERT {
   FILTER NOT EXISTS { ?asset dcterms:modified ?modified }
 }
 """,
-# Delete empty description properties from semantic assets
-"""
-DELETE {
-  ?s dcterms:description ?desc
-} WHERE {
-  ?s dcterms:description ?desc
-  FILTER(str(?desc) = "")
-}
-""",
-# Add description for semantic assets without description
-"""
-INSERT {
-  ?asset dcterms:description "The description of this asset is not available"@en
-} WHERE {
-  ?asset a adms:SemanticAsset
-  FILTER NOT EXISTS { ?asset dcterms:description ?description }
-}
-""",
 # Add missing data
 """
 INSERT DATA {
@@ -121,6 +103,28 @@ INSERT DATA {
 ]
 
 
+def get_abstract(url):
+    '''Try to fetch the abstract in url.'''
+    # First try RDF-a
+    try:
+        g = Graph.load(NAME, url, format='rdfa')
+        abstract = g.value(URIRef(url), DCTERMS.abstract)
+        if abstract:
+            abstract = abstract.strip()
+            if abstract.startswith("Abstract\n"):
+                abstract = abstract[9:].strip()
+            return abstract
+    except:
+        pass
+    # Fallback to HTML scraping
+    page = HTMLPage(NAME, url)
+    for title in ["Abstract", "Introduction", "About the meeting",
+                  "Status of this document"]:
+        text = page.get_section_text(title)
+        if text:
+            return text
+    return None
+
 def process():
     g = Graph.load(NAME, URL, format='turtle')
     for query in QUERIES:
@@ -129,4 +133,12 @@ def process():
     logging.debug("Extracting repository.")
     repo = g.extract(URIRef("http://www.w3.org/TR/"))
     repo.modified = get_modified(NAME, URL)
+    for asset in repo.dataset:
+        if not asset.description:
+            abstract = get_abstract(str(asset.uri))
+            if abstract:
+                asset.description = Literal(abstract, lang="en")
+            else:
+                logging.warning("No description for %s", asset.uri)
+                asset.description = Literal("The description of this asset is not available", lang="en")
     return repo
