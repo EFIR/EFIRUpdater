@@ -1,4 +1,4 @@
-# W3C Standards and Technical Reports
+# Greek Interoperability Catalogue
 #
 # Copyright 2014 PwC EU Services
 #
