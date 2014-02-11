@@ -164,7 +164,7 @@ def get_asset(page, tr):
         d = AssetDistribution(URIRef(urljoin(URL, a['href'])))
         d.accessURL = d.uri
         d.status = asset.status
-        d.description = Literal(a.text, lang="en")
+        d.title = Literal(a.text, lang="en")
         d.license = LICENSE
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
