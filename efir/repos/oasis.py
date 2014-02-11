@@ -39,6 +39,89 @@ LICENSE.label = Literal("OASIS Intellectual Property Rights (IPR) Policy", lang=
 LICENSE.type = LicenceType.NoDerivativeWork
 
 
+def get_abstract_from_tag(title):
+    '''Try to read the abstract following the title tag.'''
+    if isinstance(title, str):
+        title = title.parent
+    while title.name in {'span', 'b', 'i', 'font', 'a'}:
+        if title.name == 'a' and 'href' in title.attrs:
+            return None
+        title = title.parent
+    tag = get_next_real_sibling(title)
+    titleclass = None
+    if title.name == 'p':
+        if 'class' not in title.attrs and tag.name == 'p':
+            # <p>Abstract:</p>
+            # <p>...</p>
+            # <p>Status:</p>
+            tag = tag.contents[0]
+        elif 'class' in title.attrs and len(title['class']) == 1:
+            # <p class="Titlepageinfo">Abstract:</p>
+            # <p class="Abstract">...</p>
+            # <p class="Abstract">...</p>
+            # <p class="Titlepageinfo">Status:</p>
+            titleclass = title['class'][0]
+            if 'class' in tag.attrs and titleclass in tag['class']:
+                # <p class="MsoNormal">Abstract:</p>
+                # <p class="MsoNormal">...</p>
+                # <p class="MsoNormal">Status:</p>
+                titleclass = None
+                tag = tag.contents[0]
+        else:
+            return None
+    elif title.name == 'div':
+        if tag.name == 'div':
+            # <div>Abstract:</div>
+            # <div>...</div>
+            tag = tag.contents[0]
+        else:
+            return None
+    elif title.name == 'dt':
+        if tag.name == 'dd':
+            # <dt>Abstract:</dt>
+            # <dd>...</dd>
+            tag = tag.contents[0]
+        else:
+            return None
+    elif is_heading(title):
+        # <h2>Abstract</h2>
+        # ...
+        # <h2>Introduction</h2>
+        pass
+    else:
+        return None
+    abstract = ""
+    while tag:
+        if isinstance(tag, str):
+            abstract += " " + tag
+        elif is_heading(tag):
+            break
+        elif titleclass and 'class' in tag.attrs and titleclass in tag['class']:
+            break
+        elif tag.name == 'p':
+            abstract += "\n\n" + tag.text
+        else:
+            abstract += " " + tag.text
+        tag = get_next_real_sibling(tag)
+    # Remove spurious whitespaces from abstract
+    abstract = abstract.strip().replace("\r\n", "\n")
+    abstract = re.sub(r"\n(?!\n)", r" ", abstract)
+    abstract = re.sub(r"[ \t]+", r" ", abstract)
+    abstract = re.sub(r"\n+", r"\n\n", abstract)
+    abstract = re.sub(r"^ +| +$", r"", abstract, flags=re.M)
+    return abstract
+
+
+def get_abstract(url):
+    '''Try to fetch the abstract in url.'''
+    page = HTMLPage(NAME, url)
+    for title in page.find_all(text=re.compile(r"^\s*Abstract:?\s*$")):
+        abstract = get_abstract_from_tag(title)
+        if abstract:
+            return abstract
+    return None
+
+
 def get_date(tag):
     '''Return the date contained in one of the <p> children of tag.'''
     for p in tag.find_all('p'):
@@ -67,7 +150,6 @@ def get_asset(page, tr):
     logging.debug("Parsing asset %s.", name)
     asset = Asset(URIRef(URL + '#' + name))
     asset.title = Literal(title, lang="en")
-    asset.description = Literal(standard.p.text, lang="en")
     asset.status = Status.Completed
     asset.modified = get_date(approved)
     asset.versionInfo = re.search(r"([0-9.]*)(?: \(.*\)|: .*)?$", title).group(1)
@@ -87,7 +169,16 @@ def get_asset(page, tr):
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
             d.mediaType = MediaType.term(mime)
+        if asset.description is None and mime == "text/html" and \
+           not d.uri.endswith(".toc.html"):
+            abstract = get_abstract(str(d.uri))
+            if abstract:
+                asset.description = Literal(abstract, lang="en")
+            else:
+                logging.warning("No abstract found in %s", d.uri)
         asset.distribution.add(d)
+    if asset.description is None:
+        asset.description = Literal(standard.p.text, lang="en")
     return asset
 
 

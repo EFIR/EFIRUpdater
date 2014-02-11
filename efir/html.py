@@ -59,3 +59,17 @@ def get_real_children(tag):
                 yield child
         else:
             yield child
+
+
+def get_next_real_sibling(tag):
+    '''Return the next sibling of tag, omitting spaces.'''
+    tag = tag.next_sibling
+    while tag and isinstance(tag, str) and tag.strip() == "":
+        tag = tag.next_sibling
+    return tag
+
+
+def is_heading(tag):
+    '''Return True if tag is a heading.'''
+    return isinstance(tag, bs4.element.Tag) and \
+           tag.name in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}
