@@ -122,7 +122,7 @@ def get_abstract(url):
                   "Status of this document"]:
         text = page.get_section_text(title)
         if text:
-            return text
+            return text.strip("# \t\r\n")
     return None
 
 def process():
