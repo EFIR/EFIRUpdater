@@ -41,7 +41,8 @@ LICENSE.type = LicenceType.NoDerivativeWork
 
 def get_description(url):
     '''Try to fetch the abstract in url for use as a description.'''
-    abstract = HTMLPage(NAME, url).get_section_text("Abstract")
+    page = HTMLPage(NAME, url)
+    abstract = page.get_section_text("Abstract", stop=["Status", "Notices"])
     if abstract:
         return Literal(abstract, lang="en")
     else:

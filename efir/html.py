@@ -50,13 +50,17 @@ class HTMLPage(bs4.BeautifulSoup):
                 links.add(url)
         return links
 
-    def get_section_text(self, title):
-        '''Return the text under heading title.'''
+    def get_section_text(self, title, stop=[]):
+        '''Return the text under heading title.
+
+        Arguments:
+        title -- the text of the heading or a tag
+        stop -- a list of heading texts that indicate a following section
+        '''
         if not isinstance(title, bs4.element.PageElement):
-            pattern = re.compile(r"^\s*(?:\d[\d.]*\s)?\s*" + title + "\s*:?\s*$",
-                                 flags=re.I)
+            pattern = get_heading_pattern(title)
             for tag in self.find_all(text=pattern):
-                result = self.get_section_text(tag)
+                result = self.get_section_text(tag, stop=stop)
                 if result:
                     return result
             return None
@@ -111,19 +115,15 @@ class HTMLPage(bs4.BeautifulSoup):
         else:
             return None
         if not tags:
-            tags = []
-            while tag:
-                if isinstance(tag, str):
-                    tags.append(tag)
-                elif is_heading(tag):
-                    break
-                elif titleclass and 'class' in tag.attrs and \
-                     titleclass in tag['class']:
-                    break
-                else:
-                    tags.append(tag)
-                tag = get_next_real_sibling(tag)
+            tags = gather_siblings(tag, stopclass=titleclass, stoptext=stop)
         return html_to_plain(tags)
+
+
+def get_heading_pattern(title):
+    '''Return the regular expression for matching the text corresponding to
+    title.'''
+    return re.compile(r"^\s*(?:\d[\d.]*\s)?\s*" + title + "\s*:?\s*$",
+                      flags=re.I)
 
 
 def get_real_children(tag):
@@ -150,6 +150,40 @@ def is_heading(tag):
     '''Return True if tag is a heading.'''
     return isinstance(tag, bs4.element.Tag) and \
            tag.name in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}
+
+
+def gather_siblings(tag, stopclass=None, stoptext=None):
+    '''Yield tag and its siblings until a stop condition is met.
+
+    Arguments:
+    tag -- the first tag
+    stopclass -- a class or list of classes
+    stoptext -- a text or list of texts
+    '''
+    if not stopclass:
+        stopclass = []
+    elif isinstance(stopclass, str):
+        stopclass = [stopclass]
+    if not stoptext:
+        stoptext = []
+    elif isinstance(stoptext, str):
+        stoptext = [get_heading_pattern(stoptext)]
+    else:
+        stoptext = [get_heading_pattern(text) for text in stoptext]
+    while tag:
+        if isinstance(tag, str):
+            if any(exp.match(tag) for exp in stoptext):
+                return
+        else:
+            if is_heading(tag):
+                return
+            if 'class' in tag.attrs and \
+               any(cls in tag['class'] for cls in stopclass):
+                return
+            if any(exp.match(tag.text) for exp in stoptext):
+                return
+        yield tag
+        tag = get_next_real_sibling(tag)
 
 
 def clean_text(text):
