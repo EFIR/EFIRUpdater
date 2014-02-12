@@ -19,7 +19,6 @@
 # permissions and limitations under the Licence.
 
 from .. import *
-import re
 import collections
 
 NAME = 'egif'

@@ -126,17 +126,6 @@ def get_heading_pattern(title):
                       flags=re.I)
 
 
-def get_real_children(tag):
-    '''Yield the children of tag, omitting spaces.'''
-    for child in tag.children:
-        if isinstance(child, str):
-            child = child.strip()
-            if child:
-                yield child
-        else:
-            yield child
-
-
 def get_next_real_sibling(tag):
     '''Return the next sibling of tag, omitting spaces.'''
     tag = tag.next_sibling
