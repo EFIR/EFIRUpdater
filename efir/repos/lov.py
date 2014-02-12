@@ -23,17 +23,14 @@ from .. import *
 NAME = 'lov'
 URL = "http://lov.okfn.org/dataset/lov/lov.rdf"
 
+TITLE = "Linked Open Vocabularies"
+DESCRIPTION = "LOV objective is to provide easy access methods to this ecosystem of vocabularies, and in particular by making explicit the ways they link to each other and providing metrics on how they are used in the linked data cloud, help to improve their understanding, visibility and usability, and overall quality."
+
 CONSTRUCT = """
 PREFIX voaf: <http://purl.org/vocommons/voaf#>
 PREFIX bibo: <http://purl.org/ontology/bibo/>
 
 CONSTRUCT {
-  <http://lov.okfn.org/dataset/lov> a adms:AssetRepository ;
-        dcat:accessURL <http://lov.okfn.org/dataset/lov/> ;
-        dcterms:title "Linked Open Vocabularies"@en ;
-        dcterms:description "LOV objective is to provide easy access methods to this ecosystem of vocabularies, and in particular by making explicit the ways they link to each other and providing metrics on how they are used in the linked data cloud, help to improve their understanding, visibility and usability, and overall quality."@en ;
-        dcat:dataset ?asset .
-
   ?asset a adms:Asset .
   ?asset dcterms:title ?title .
   ?asset skos:altLabel ?shortTitle .
@@ -69,30 +66,31 @@ CONSTRUCT {
   ?creator foaf:name ?creatorname .
   ?creator dcterms:type <http://purl.org/adms/publishertype/PrivateIndividual(s)> .
 } WHERE {
-  ?asset rdf:type voaf:Vocabulary ;
-         dcterms:title ?title .
-  FILTER NOT EXISTS { ?asset dcterms:publisher <http://www.w3.org/data#W3C> }
-  OPTIONAL { ?asset dcterms:description ?description }
-  OPTIONAL { ?asset dcterms:modified ?modified }
-  OPTIONAL { ?asset dcterms:issued ?issued }
+  ?voc rdf:type voaf:Vocabulary ;
+       dcterms:title ?title .
+  FILTER NOT EXISTS { ?voc dcterms:publisher <http://www.w3.org/data#W3C> }
+  OPTIONAL { ?voc dcterms:description ?description }
+  OPTIONAL { ?voc dcterms:modified ?modified }
+  OPTIONAL { ?voc dcterms:issued ?issued }
   OPTIONAL {
-    ?asset dcterms:publisher ?publisher
+    ?voc dcterms:publisher ?publisher
     OPTIONAL { ?publisher foaf:name ?publishername }
   }
   OPTIONAL {
-    ?asset dcterms:creator ?creator
-    FILTER NOT EXISTS { ?asset dcterms:publisher ?publisher }
+    ?voc dcterms:creator ?creator
+    FILTER NOT EXISTS { ?voc dcterms:publisher ?publisher }
     OPTIONAL { ?creator foaf:name ?creatorname }
   }
-  OPTIONAL { ?asset bibo:shortTitle ?shortTitle }
-  OPTIONAL { ?asset voaf:extends ?extends }
-  OPTIONAL { ?asset voaf:specializes ?specializes }
-  OPTIONAL { ?asset voaf:reliesOn ?reliesOn }
-  OPTIONAL { ?asset voaf:usedBy ?usedBy }
-  OPTIONAL { ?asset voaf:generalizes ?generalizes }
-  OPTIONAL { ?asset voaf:hasEquivalencesWith ?hasEquivalencesWith }
-  OPTIONAL { ?asset voaf:hasDisjunctionsWith ?hasDisjunctionsWith }
-  OPTIONAL { ?asset voaf:similar ?similar }
+  OPTIONAL { ?voc bibo:shortTitle ?shortTitle }
+  OPTIONAL { ?voc voaf:extends ?extends }
+  OPTIONAL { ?voc voaf:specializes ?specializes }
+  OPTIONAL { ?voc voaf:reliesOn ?reliesOn }
+  OPTIONAL { ?voc voaf:usedBy ?usedBy }
+  OPTIONAL { ?voc voaf:generalizes ?generalizes }
+  OPTIONAL { ?voc voaf:hasEquivalencesWith ?hasEquivalencesWith }
+  OPTIONAL { ?voc voaf:hasDisjunctionsWith ?hasDisjunctionsWith }
+  OPTIONAL { ?voc voaf:similar ?similar }
+  BIND(IRI(REPLACE(str(?voc), "[/#]*$", "")) AS ?asset)
   BIND(IRI(CONCAT(str(?asset), "?type=distribution")) AS ?d)
 }
 """
@@ -163,7 +161,19 @@ def process():
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         adms.update(query)
-    logging.debug("Extracting repository.")
-    repo = adms.extract(URIRef("http://lov.okfn.org/dataset/lov"))
+    logging.debug("Extracting assets.")
+    assets = {asset.uri:asset for asset in adms.extract_all(Asset)}
+    logging.debug("Filtering assets and building repository.")
+    repo = Repository(URIRef("http://lov.okfn.org/dataset/lov/"))
+    repo.title = Literal(TITLE, lang="en")
+    repo.description = Literal(DESCRIPTION, lang="en")
     repo.modified = get_modified(NAME, URL)
+    repo.accessURL = repo.uri
+    repo.dataset = set()
+    for data in read_csv(NAME, "lov_assets.csv"):
+        uri = URIRef(data["URI"].rstrip("/#"))
+        if uri in assets:
+            repo.dataset.add(assets[uri])
+        else:
+            logging.warning("Asset not found: %s", uri)
     return repo
