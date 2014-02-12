@@ -59,6 +59,43 @@ def get_date(tag):
     return None
 
 
+def get_distribution_name(a):
+    '''Return the guessed distribution name of link a.'''
+    # Find outermost tag containing only this link
+    tag = a
+    while tag.name not in {'li', 'td'} and \
+          len(tag.parent.find_all('a', href=True)) < 2:
+        tag = tag.parent
+    # Three words or more, or part of sentence, or filename: this is the name
+    name = clean_text(a.text, oneline=True)
+    if len(name.split()) > 2 or \
+       (tag != a and isinstance(get_next_real_sibling(a), str) and \
+                     isinstance(get_previous_real_sibling(a), str)) or \
+       (len(name.split()) == 1 and name != "ASN.1" and ('.' in name or '-' in name)):
+        return clean_text(tag.text, oneline=True)
+    # Otherwise: attach to previous text
+    while tag.name != 'td':
+        tag = tag.parent
+    text = None
+    for s in tag.strings:
+        if s.parent == a:
+            break
+        ss = s.strip()
+        if ss not in {'', '/'} and \
+           (s.parent.name != 'a' or 'href' not in s.parent.attrs):
+            text = s
+    else:
+        assert False
+    if text:
+        text = clean_text(text, oneline=True)
+        if text.endswith(':'):
+            return text + " " + name
+        else:
+            return text + " (" + name + ")"
+    else:
+        return name
+
+
 def get_asset_rows(page):
     '''Return the list of rows corresponding to assets.'''
     table = page.find(class_="node-inner").table
@@ -85,13 +122,11 @@ def get_asset(page, tr):
     asset.theme = Eurovoc.term("100223")
     asset.type = AssetType.Schema
     asset.distribution = set()
-    for a in standard.find_all('a'):
-        if 'href' not in a.attrs:
-            continue
+    for a in standard.find_all('a', href=True):
         d = AssetDistribution(URIRef(urljoin(URL, a['href'])))
         d.accessURL = d.uri
         d.status = asset.status
-        d.title = Literal(a.text, lang="en")
+        d.title = Literal(get_distribution_name(a), lang="en")
         d.license = LICENSE
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:

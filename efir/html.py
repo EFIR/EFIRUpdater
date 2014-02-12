@@ -135,6 +135,15 @@ def get_next_real_sibling(tag):
     return tag
 
 
+def get_previous_real_sibling(tag):
+    '''Return the previous sibling of tag, omitting spaces.'''
+    tag = tag.previous_sibling
+    while tag and ((isinstance(tag, str) and tag.strip() == "") or \
+                   (isinstance(tag, bs4.element.Comment))):
+        tag = tag.previous_sibling
+    return tag
+
+
 def is_heading(tag):
     '''Return True if tag is a heading.'''
     return isinstance(tag, bs4.element.Tag) and \
@@ -175,11 +184,19 @@ def gather_siblings(tag, stopclass=None, stoptext=None):
         tag = get_next_real_sibling(tag)
 
 
-def clean_text(text):
-    '''Clean text, removing spurious whitespaces.'''
+def clean_text(text, oneline=False):
+    '''Clean text, removing spurious whitespaces.
+
+    Arguments:
+    text -- the text to clean
+    oneline -- if True, remove all newlines
+    '''
     text = text.strip().replace("\r\n", "\n")
-    text = re.sub(r"\n{2,}", r"\n\n", text)
-    text = re.sub(r"[ \t]+", r" ", text)
+    if oneline:
+        text = re.sub(r"\s+", r" ", text)
+    else:
+        text = re.sub(r"[ \t\r\f\v]+", r" ", text)
+        text = re.sub(r"\n{2,}", r"\n\n", text)
     text = re.sub(r"^ +| +$", r"", text, flags=re.M)
     return text
 
