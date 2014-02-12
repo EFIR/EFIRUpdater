@@ -97,7 +97,7 @@ class AssetDistribution(ADMSResource):
 class Asset(ADMSResource):
 
     # Mandatory properties
-    theme           = ADMSProperty(also=DCAT.theme, rng=Eurovoc, min=1)
+    theme           = ADMSProperty(DCTERMS.subject, also=DCAT.theme, rng=Eurovoc, min=1)
     description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT, min=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)
