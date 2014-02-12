@@ -40,24 +40,6 @@ def get_asset_uris():
         yield URIRef(urljoin(URL, tr.a['href']))
 
 
-def parse_text(tag):
-    '''Return the text contained in tag.'''
-    result = ""
-    for child in get_real_children(tag):
-        if isinstance(child, str):
-            result += child
-        elif child.name == 'p':
-            result += parse_text(child) + "\n\n"
-        elif child.name == 'ul':
-            for li in child.find_all('li', recursive=False):
-                result += "* " + parse_text(li) + "\n"
-        elif child.name == 'br':
-            result += "\n"
-        else:
-            result += " ".join(child.stripped_strings)
-    return result.strip()
-
-
 def get_items(page, name):
     '''Return the contents of the field named name on the HTMLPage page.
     The fields are formatted as follows on the page:
@@ -79,7 +61,7 @@ def get_items(page, name):
 
 def get_text(page, name):
     '''Return a list of text values for field named name on page.'''
-    return [parse_text(item) for item in get_items(page, name)]
+    return [html_to_plain(item) for item in get_items(page, name)]
 
 
 def get_fulltext(page, name):

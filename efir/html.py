@@ -203,7 +203,7 @@ def html_to_plain(tags):
     for tag in tags:
         if isinstance(tag, str):
             result += re.sub(r"\s", " ", tag)
-        elif tag.name == 'p':
+        elif tag.name in {'p', 'div'}:
             result += "\n\n" + html_to_plain(tag.children) + "\n\n"
         elif tag.name == 'ul':
             result += "\n\n"
