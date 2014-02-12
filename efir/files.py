@@ -24,6 +24,7 @@ import shutil
 import urllib.request
 import urllib.parse
 import email.utils
+import csv
 
 CACHE_DIR = "cache"
 DATA_DIR = "data"
@@ -70,6 +71,27 @@ def get_modified(module, name):
     name (a data file or URL) or None if unknown.'''
     filename = get_filename(module, name) + '=modified'
     if not os.path.exists(filename):
-        return None
+        if is_url(name):
+            logging.debug("Fetching headers of %s.", name)
+            response = urllib.request.urlopen(urllib.request.Request(name, method='HEAD'))
+            if 'Last-Modified' in response.headers:
+                mtime = response.headers['Last-Modified']
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                with open(filename, 'w') as f:
+                    f.write(mtime)
+            else:
+                return None
+        else:
+            return None
     with open(filename, 'r') as f:
         return email.utils.parsedate_to_datetime(f.read().strip())
+
+def read_csv(module, name):
+    '''Read a CSV file. The first row contains the column names. Yield the data
+    rows as dictionaries with the column names as keys.'''
+    with open_data(module, name, binary=False) as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        for row in reader:
+            row.extend([""] * (len(header) - len(row)))
+            yield {name:row[i] for i, name in enumerate(header)}
