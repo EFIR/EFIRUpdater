@@ -18,12 +18,14 @@ additional modules:
 * [isodate][]
 * [BeautifulSoup 4][]
 * [lxml][]
+* [html5lib][]
 
 [Python]: http://python.org/
 [rdflib]: https://pypi.python.org/pypi/rdflib
 [isodate]: https://pypi.python.org/pypi/isodate
 [BeautifulSoup 4]: https://pypi.python.org/pypi/beautifulsoup4
 [lxml]: https://pypi.python.org/pypi/lxml
+[html5lib]: https://pypi.python.org/pypi/html5lib
 
 
 Usage
