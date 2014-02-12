@@ -152,18 +152,10 @@ def is_heading(tag):
            tag.name in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}
 
 
-def clean_text(text, foldnl=True):
-    '''Clean text, removing spurious whitespaces.
-
-    Arguments:
-    foldnl -- whether to fold newlines
-    '''
+def clean_text(text):
+    '''Clean text, removing spurious whitespaces.'''
     text = text.strip().replace("\r\n", "\n")
-    if foldnl:
-        text = re.sub(r"\n(?!\n)", r" ", text)
-        text = re.sub(r"\n+", r"\n\n", text)
-    else:
-        text = re.sub(r"\n{2,}", r"\n\n", text)
+    text = re.sub(r"\n{2,}", r"\n\n", text)
     text = re.sub(r"[ \t]+", r" ", text)
     text = re.sub(r"^ +| +$", r"", text, flags=re.M)
     return text
@@ -176,20 +168,22 @@ def html_to_plain(tags):
     result = ""
     for tag in tags:
         if isinstance(tag, str):
-            result += " " + clean_text(tag)
+            result += re.sub(r"\s", " ", tag)
         elif tag.name == 'p':
-            result += "\n\n" + html_to_plain(get_real_children(tag))
+            result += "\n\n" + html_to_plain(tag.children) + "\n\n"
         elif tag.name == 'ul':
-            result += "\n"
+            result += "\n\n"
             for li in tag.find_all('li', recursive=False):
-                result += "\n* " + html_to_plain(get_real_children(li))
+                result += "\n* " + html_to_plain(li.children)
+            result += "\n\n"
         elif tag.name == 'ol':
-            result += "\n"
+            result += "\n\n"
             for i, li in enumerate(tag.find_all('li', recursive=False)):
                 result += "\n" + str(i) + ". " + \
-                          html_to_plain(get_real_children(li))
+                          html_to_plain(li.children)
+            result += "\n\n"
         elif tag.name == 'br':
             result += "\n"
         else:
-            result += " " + clean_text(tag.text)
-    return clean_text(result, foldnl=False)
+            result += re.sub(r"\s", " ", tag.text)
+    return clean_text(result)
