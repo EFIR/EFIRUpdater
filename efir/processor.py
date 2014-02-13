@@ -59,6 +59,17 @@ class Processor:
                 g.serialize(f)
         except:
             logging.exception("Unable to serialize graph.")
+            return
+        assets = repo.get_values('dataset')
+        distributions = set.union(*(a.get_values('distribution') for a in assets))
+        licenses = set.union(*(d.get_values('license') for d in distributions))
+        publishers = set.union(*(a.get_values('publisher') for a in assets)) | \
+                     set.union(*(d.get_values('publisher') for d in distributions)) | \
+                     repo.get_values('publisher')
+        logging.info("Successfully processed %d assets, %d distributions, " +
+                     "%d licenses, and %d publishers.",
+                     len(assets), len(distributions), len(licenses),
+                     len(publishers))
 
 
 processors = {}

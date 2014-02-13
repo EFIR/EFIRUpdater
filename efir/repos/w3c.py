@@ -133,12 +133,15 @@ def process():
     logging.debug("Extracting repository.")
     repo = g.extract(URIRef("http://www.w3.org/TR/"))
     repo.modified = get_modified(NAME, URL)
+    fetched = 0
     for asset in repo.dataset:
         if not asset.description:
             abstract = get_abstract(str(asset.uri))
             if abstract:
                 asset.description = Literal(abstract, lang="en")
+                fetched += 1
             else:
                 logging.warning("No description for %s", asset.uri)
                 asset.description = Literal("The description of this asset is not available", lang="en")
+    logging.info("Fetched %d descriptions.", fetched)
     return repo
