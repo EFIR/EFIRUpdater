@@ -105,7 +105,9 @@ def get_asset(uri):
                       if line.strip("* "))
     asset.title = Literal(title, lang="en")
     asset.altLabel = Literal(page.find(class_="title").text, lang="nl")
-    asset.description = Literal(get_fulltext(page, "beschrijving"), lang="nl")
+    description = get_fulltext(page, "beschrijving")
+    asset.description = {Literal(description, lang="nl"),
+                         Literal(translate(description), lang="en")}
     asset.status = Status.Completed
     asset.modified = get_date(page, "datum-opname")
     asset.versionInfo = set(get_text(page, "version"))

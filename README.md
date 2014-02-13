@@ -19,6 +19,7 @@ additional modules:
 * [BeautifulSoup 4][]
 * [lxml][]
 * [html5lib][]
+* [goslate][]
 
 [Python]: http://python.org/
 [rdflib]: https://pypi.python.org/pypi/rdflib
@@ -26,6 +27,7 @@ additional modules:
 [BeautifulSoup 4]: https://pypi.python.org/pypi/beautifulsoup4
 [lxml]: https://pypi.python.org/pypi/lxml
 [html5lib]: https://pypi.python.org/pypi/html5lib
+[goslate]: https://pypi.python.org/pypi/goslate
 
 
 Usage

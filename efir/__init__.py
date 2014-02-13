@@ -23,3 +23,4 @@ from .rdf import *
 from .model import *
 from .processor import *
 from .html import *
+from .translation import *
