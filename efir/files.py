@@ -72,7 +72,8 @@ def urlopen_cache(url, binary=True):
     cname = get_filename(url)
     if not os.path.exists(cname):
         logging.debug("Downloading %s.", url)
-        response = urllib.request.urlopen(url)
+        request = urllib.request.Request(url, headers={"Accept": "*/*"})
+        response = urllib.request.urlopen(request)
         os.makedirs(os.path.dirname(cname), exist_ok=True)
         with open(cname, 'wb') as f:
             shutil.copyfileobj(response, f)
@@ -99,7 +100,9 @@ def get_modified(name):
     if not os.path.exists(filename):
         if is_url(name):
             logging.debug("Fetching headers of %s.", name)
-            response = urllib.request.urlopen(urllib.request.Request(name, method='HEAD'))
+            request = urllib.request.Request(name, method='HEAD',
+                                             headers={"Accept": "*/*"})
+            response = urllib.request.urlopen(request)
             if 'Last-Modified' in response.headers:
                 mtime = response.headers['Last-Modified']
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
