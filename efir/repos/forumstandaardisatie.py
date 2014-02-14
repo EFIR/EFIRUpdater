@@ -95,7 +95,7 @@ def get_date(page, name):
         return None
 
 
-def get_asset(uri):
+def get_asset(uri, descriptions):
     '''Generate the asset with URI uri.'''
     logging.debug("Parsing asset %s.", uri)
     page = HTMLPage(NAME, str(uri))
@@ -105,9 +105,13 @@ def get_asset(uri):
                       if line.strip("* "))
     asset.title = Literal(title, lang="en")
     asset.altLabel = Literal(page.find(class_="title").text, lang="nl")
-    description = get_fulltext(page, "beschrijving")
-    asset.description = {Literal(description, lang="nl"),
-                         Literal(translate(description), lang="en")}
+    description_nl = get_fulltext(page, "beschrijving")
+    if uri in descriptions:
+        description_en = descriptions[uri]
+    else:
+        description_en = translate(description_nl)
+    asset.description = {Literal(description_nl, lang="nl"),
+                         Literal(description_en, lang="en")}
     asset.status = Status.Completed
     asset.modified = get_date(page, "datum-opname")
     asset.versionInfo = set(get_text(page, "version"))
@@ -135,12 +139,16 @@ def get_asset(uri):
 
 
 def process():
+    logging.debug("Loading descriptions")
+    descriptions = {URIRef(data["URI"]):data["Description"]
+                    for data in read_csv(NAME, "descriptions.csv")}
+    logging.debug("Generating repository")
     repo = Repository(URIRef(URL))
     repo.accessURL = URIRef(URL)
     repo.title = {Literal(TITLE, lang="en"), Literal(TITLE_NL, lang="nl")}
     repo.description = Literal(DESCRIPTION, lang="en")
     repo.modified = get_modified(NAME, URL)
     repo.spatial = GeoNames.term("2750405")
-    repo.dataset = {get_asset(uri) for uri in get_asset_uris()}
+    repo.dataset = {get_asset(uri, descriptions) for uri in get_asset_uris()}
     repo.publisher = PUBLISHER
     return repo
