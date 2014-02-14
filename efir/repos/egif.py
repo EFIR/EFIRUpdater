@@ -22,7 +22,6 @@ from .. import *
 import collections
 import mimetypes
 
-NAME = 'egif'
 BASE_URL = "http://www.yap.gov.gr/e-gif/schemas/current/"
 
 TITLE = "Greek Interoperability Catalogue"
@@ -73,7 +72,7 @@ def process_section(repo, section):
     asset.type = section.asset_type
     asset.interoperabilityLevel = InteroperabilityLevel.Semantic
     asset.distribution = set()
-    for url in HTMLPage(NAME, section.url).get_child_links():
+    for url in HTMLPage(section.url).get_child_links():
         m = re.match(section.pattern, url)
         if not m:
             continue
@@ -85,7 +84,7 @@ def process_section(repo, section):
         d = AssetDistribution(URIRef(url))
         d.accessURL = d.uri
         d.title = Literal(name, lang="en")
-        d.modified = get_modified(NAME, url)
+        d.modified = get_modified(url)
         d.status = asset.status
         d.mediaType = MediaType.term("application/xml")
         d.publisher = repo.publisher
@@ -100,7 +99,7 @@ def process_section(repo, section):
 def process_static(repo):
     '''Read data/egif_static.csv and add the assets to repo.'''
     logging.debug("Processing static information.")
-    for data in read_csv(NAME, "static.csv"):
+    for data in read_csv("static.csv"):
         asset = Asset(URIRef(data['URL']))
         asset.title = Literal(data['Title'], lang="en")
         asset.description = Literal(data['Description'], lang="en")

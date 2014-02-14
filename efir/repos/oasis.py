@@ -21,7 +21,6 @@
 from .. import *
 import mimetypes
 
-NAME = 'oasis'
 URL = "https://www.oasis-open.org/standards"
 
 TITLE = 'Organization for the Advancement of Structured Information Standards - OASIS'
@@ -40,7 +39,7 @@ LICENSE.type = LicenceType.NoDerivativeWork
 
 def get_description(url):
     '''Try to fetch the abstract in url for use as a description.'''
-    page = HTMLPage(NAME, url)
+    page = HTMLPage(url)
     abstract = page.get_section_text("Abstract", stop=["Status", "Notices"])
     if abstract:
         return Literal(abstract, lang="en")
@@ -141,12 +140,12 @@ def get_asset(page, tr):
 
 
 def process():
-    page = HTMLPage(NAME, URL)
+    page = HTMLPage(URL)
     repo = Repository(URIRef(URL))
     repo.accessURL = URIRef(URL)
     repo.title = Literal(TITLE, lang="en")
     repo.description = Literal(DESCRIPTION, lang="en")
     repo.publisher = PUBLISHER
-    repo.modified = get_modified(NAME, URL)
+    repo.modified = get_modified(URL)
     repo.dataset = {get_asset(page, row) for row in get_asset_rows(page)}
     return repo

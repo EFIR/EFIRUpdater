@@ -30,20 +30,45 @@ CACHE_DIR = "cache"
 DATA_DIR = "data"
 OUT_DIR = "output"
 
+
+def set_current_module(name):
+    '''Set the currently executing module name to name.'''
+    global CURRENT_MODULE
+    if name:
+        CURRENT_MODULE = name
+    else:
+        del CURRENT_MODULE
+
+class module_context:
+
+    '''Context manager to set the currently executing module.'''
+
+    def __init__(self, name):
+        self.name = name
+
+    def __enter__(self):
+        set_current_module(self.name)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        set_current_module(None)
+
+
 def is_url(name):
     '''Return True if name appears to be a URL.'''
     return name.startswith('http://') or name.startswith('https://')
 
-def get_filename(module, name):
+def get_filename(name):
     '''Return the filename associated to name (a data file or URL).'''
+    global CURRENT_MODULE
     if is_url(name):
-        return os.path.join(CACHE_DIR, module, urllib.parse.quote(name, safe=''))
+        return os.path.join(CACHE_DIR, CURRENT_MODULE,
+                            urllib.parse.quote(name, safe=''))
     else:
-        return os.path.join(DATA_DIR, module, name)
+        return os.path.join(DATA_DIR, CURRENT_MODULE, name)
 
-def urlopen_cache(module, url, binary=True):
+def urlopen_cache(url, binary=True):
     '''Download url, if not yet in cache, and return a file object.'''
-    cname = get_filename(module, url)
+    cname = get_filename(url)
     if not os.path.exists(cname):
         logging.debug("Downloading %s.", url)
         response = urllib.request.urlopen(url)
@@ -57,19 +82,19 @@ def urlopen_cache(module, url, binary=True):
     logging.debug("Opening %s.", cname)
     return open(cname, 'rb' if binary else 'r')
 
-def open_data(module, name, binary=True):
+def open_data(name, binary=True):
     '''Open a data file or URL (if it begins with http).'''
     if is_url(name):
-        return urlopen_cache(module, name, binary)
+        return urlopen_cache(name, binary)
     else:
-        filename = get_filename(module, name)
+        filename = get_filename(name)
         logging.debug("Opening %s.", filename)
         return open(filename, 'rb' if binary else 'r')
 
-def get_modified(module, name):
+def get_modified(name):
     '''Return a datetime.datetime object with the last modification date of
     name (a data file or URL) or None if unknown.'''
-    filename = get_filename(module, name) + '=modified'
+    filename = get_filename(name) + '=modified'
     if not os.path.exists(filename):
         if is_url(name):
             logging.debug("Fetching headers of %s.", name)
@@ -86,10 +111,10 @@ def get_modified(module, name):
     with open(filename, 'r') as f:
         return email.utils.parsedate_to_datetime(f.read().strip())
 
-def read_csv(module, name):
+def read_csv(name):
     '''Read a CSV file. The first row contains the column names. Yield the data
     rows as dictionaries with the column names as keys.'''
-    with open_data(module, name, binary=False) as f:
+    with open_data(name, binary=False) as f:
         reader = csv.reader(f)
         header = next(reader)
         for row in reader:

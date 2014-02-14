@@ -38,28 +38,29 @@ class Processor:
 
     def process(self):
         logging.info("Processing repository %s.", self.name)
-        module = importlib.import_module('..repos.' + self.name, __name__)
-        try:
-            repo = module.process()
-        except:
-            logging.exception("Unable to process repository.")
-            return
-        logging.debug("Validating model.")
-        if not isinstance(repo, Repository):
-            logging.error("Result is not a Repository: %s.", repo)
-            return
-        repo.validate().log()
-        logging.debug("Constructing graph")
-        g = Graph(repo)
-        filename = os.path.join(OUT_DIR, self.name + '.rdf')
-        logging.debug("Serializing result to %s.", filename)
-        try:
-            os.makedirs(OUT_DIR, exist_ok=True)
-            with open(filename, 'wb') as f:
-                g.serialize(f)
-        except:
-            logging.exception("Unable to serialize graph.")
-            return
+        with module_context(self.name):
+            module = importlib.import_module('..repos.' + self.name, __name__)
+            try:
+                repo = module.process()
+            except:
+                logging.exception("Unable to process repository.")
+                return
+            logging.debug("Validating model.")
+            if not isinstance(repo, Repository):
+                logging.error("Result is not a Repository: %s.", repo)
+                return
+            repo.validate().log()
+            logging.debug("Constructing graph")
+            g = Graph(repo)
+            filename = os.path.join(OUT_DIR, self.name + '.rdf')
+            logging.debug("Serializing result to %s.", filename)
+            try:
+                os.makedirs(OUT_DIR, exist_ok=True)
+                with open(filename, 'wb') as f:
+                    g.serialize(f)
+            except:
+                logging.exception("Unable to serialize graph.")
+                return
         assets = repo.get_values('dataset')
         distributions = set.union(*(a.get_values('distribution') for a in assets))
         licenses = set.union(*(d.get_values('license') for d in distributions))
@@ -70,6 +71,7 @@ class Processor:
                      "%d licenses, and %d publishers.",
                      len(assets), len(distributions), len(licenses),
                      len(publishers))
+        CURRENT_MODULE = ""
 
 
 processors = {}

@@ -20,7 +20,6 @@
 
 from .. import *
 
-NAME = 'lov'
 URL = "http://lov.okfn.org/dataset/lov/lov.rdf"
 
 TITLE = "Linked Open Vocabularies"
@@ -155,7 +154,7 @@ INSERT {
 
 
 def process():
-    g = Graph.load(NAME, URL, format='xml')
+    g = Graph.load(URL, format='xml')
     logging.debug("Constructing ADMS graph")
     adms = g.query(CONSTRUCT).graph
     for query in QUERIES:
@@ -167,10 +166,10 @@ def process():
     repo = Repository(URIRef("http://lov.okfn.org/dataset/lov/"))
     repo.title = Literal(TITLE, lang="en")
     repo.description = Literal(DESCRIPTION, lang="en")
-    repo.modified = get_modified(NAME, URL)
+    repo.modified = get_modified(URL)
     repo.accessURL = repo.uri
     repo.dataset = set()
-    for data in read_csv(NAME, "assets.csv"):
+    for data in read_csv("assets.csv"):
         uri = URIRef(data["URI"].rstrip("/#"))
         if uri in assets:
             repo.dataset.add(assets[uri])

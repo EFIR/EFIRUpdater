@@ -20,7 +20,6 @@
 
 from .. import *
 
-NAME = 'w3c'
 URL = "http://www.w3.org/2012/06/tr2adms/adms"
 
 QUERIES = [
@@ -107,7 +106,7 @@ def get_abstract(url):
     '''Try to fetch the abstract in url.'''
     # First try RDF-a
     try:
-        g = Graph.load(NAME, url, format='rdfa')
+        g = Graph.load(url, format='rdfa')
         abstract = g.value(URIRef(url), DCTERMS.abstract)
         if abstract:
             abstract = abstract.strip()
@@ -117,7 +116,7 @@ def get_abstract(url):
     except:
         pass
     # Fallback to HTML scraping
-    page = HTMLPage(NAME, url)
+    page = HTMLPage(url)
     for title in ["Abstract", "Introduction", "About the meeting",
                   "Status of this document"]:
         text = page.get_section_text(title)
@@ -126,13 +125,13 @@ def get_abstract(url):
     return None
 
 def process():
-    g = Graph.load(NAME, URL, format='turtle')
+    g = Graph.load(URL, format='turtle')
     for query in QUERIES:
         logging.debug("Running update query %s", query)
         g.update(query)
     logging.debug("Extracting repository.")
     repo = g.extract(URIRef("http://www.w3.org/TR/"))
-    repo.modified = get_modified(NAME, URL)
+    repo.modified = get_modified(URL)
     fetched = 0
     for asset in repo.dataset:
         if not asset.description:

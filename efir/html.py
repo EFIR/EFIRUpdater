@@ -28,10 +28,10 @@ class HTMLPage(bs4.BeautifulSoup):
 
     '''A specialized BeautifulSoup.'''
 
-    def __init__(self, module, url):
+    def __init__(self, url):
         '''Load a web page located at url.'''
         self.url = url
-        bs4.BeautifulSoup.__init__(self, open_data(module, url, binary=True))
+        bs4.BeautifulSoup.__init__(self, open_data(url, binary=True))
 
     def get_child_links(self):
         '''Return a set of links that are descendants of this page.'''

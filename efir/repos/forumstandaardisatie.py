@@ -20,7 +20,6 @@
 
 from .. import *
 
-NAME = 'forumstandaardisatie'
 URL = "https://lijsten.forumstandaardisatie.nl/"
 
 TITLE = 'Dutch Standardisation Forum - "Comply or explain"-standards'
@@ -34,7 +33,7 @@ PUBLISHER.type = PublisherType.NationalAuthority
 
 def get_asset_uris():
     '''Yield the URIRefs of all assets.'''
-    home = HTMLPage(NAME, URL)
+    home = HTMLPage(URL)
     table = home.find('table', summary="overzichtstabel")
     for tr in table.tbody.find_all('tr'):
         yield URIRef(urljoin(URL, tr.a['href']))
@@ -98,7 +97,7 @@ def get_date(page, name):
 def get_asset(uri, descriptions):
     '''Generate the asset with URI uri.'''
     logging.debug("Parsing asset %s.", uri)
-    page = HTMLPage(NAME, str(uri))
+    page = HTMLPage(str(uri))
     asset = Asset(uri)
     title = ", ".join(line.strip("* ")
                       for line in get_fulltext(page, "full-name").split("\n")
@@ -113,7 +112,7 @@ def get_asset(uri, descriptions):
     asset.description = {Literal(description_nl, lang="nl"),
                          Literal(description_en, lang="en")}
     asset.status = Status.Completed
-    asset.modified = get_date(page, "datum-opname") or get_modified(NAME, str(uri))
+    asset.modified = get_date(page, "datum-opname") or get_modified(str(uri))
     asset.versionInfo = set(get_text(page, "version"))
     asset.language = Language.nl
     asset.publisher = PUBLISHER
@@ -144,13 +143,13 @@ def get_asset(uri, descriptions):
 def process():
     logging.debug("Loading descriptions")
     descriptions = {URIRef(data["URI"]):data["Description"]
-                    for data in read_csv(NAME, "descriptions.csv")}
+                    for data in read_csv("descriptions.csv")}
     logging.debug("Generating repository")
     repo = Repository(URIRef(URL))
     repo.accessURL = URIRef(URL)
     repo.title = {Literal(TITLE, lang="en"), Literal(TITLE_NL, lang="nl")}
     repo.description = Literal(DESCRIPTION, lang="en")
-    repo.modified = get_modified(NAME, URL)
+    repo.modified = get_modified(URL)
     repo.spatial = GeoNames.term("2750405")
     repo.dataset = {get_asset(uri, descriptions) for uri in get_asset_uris()}
     repo.publisher = PUBLISHER
