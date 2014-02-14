@@ -113,10 +113,12 @@ def get_asset(uri, descriptions):
     asset.description = {Literal(description_nl, lang="nl"),
                          Literal(description_en, lang="en")}
     asset.status = Status.Completed
-    asset.modified = get_date(page, "datum-opname")
+    asset.modified = get_date(page, "datum-opname") or get_modified(NAME, str(uri))
     asset.versionInfo = set(get_text(page, "version"))
     asset.language = Language.nl
     asset.publisher = PUBLISHER
+    asset.type = AssetType.TechnicalInteropabilityAgreement
+    asset.theme = Eurovoc.term("100223")
     asset.interoperabilityLevel = set()
     for level in get_text(page, "interoperabiliteitsniveau"):
         if level == "Process":
@@ -134,6 +136,7 @@ def get_asset(uri, descriptions):
         d = AssetDistribution(uri)
         d.accessURL = uri
         d.status = asset.status
+        d.publisher = PUBLISHER
         asset.distribution.add(d)
     return asset
 
