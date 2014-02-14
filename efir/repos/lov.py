@@ -170,7 +170,7 @@ def process():
     repo.modified = get_modified(NAME, URL)
     repo.accessURL = repo.uri
     repo.dataset = set()
-    for data in read_csv(NAME, "lov_assets.csv"):
+    for data in read_csv(NAME, "assets.csv"):
         uri = URIRef(data["URI"].rstrip("/#"))
         if uri in assets:
             repo.dataset.add(assets[uri])

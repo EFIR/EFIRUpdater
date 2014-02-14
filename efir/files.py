@@ -39,7 +39,7 @@ def get_filename(module, name):
     if is_url(name):
         return os.path.join(CACHE_DIR, module, urllib.parse.quote(name, safe=''))
     else:
-        return os.path.join(DATA_DIR, name)
+        return os.path.join(DATA_DIR, module, name)
 
 def urlopen_cache(module, url, binary=True):
     '''Download url, if not yet in cache, and return a file object.'''

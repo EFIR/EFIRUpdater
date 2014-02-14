@@ -100,7 +100,7 @@ def process_section(repo, section):
 def process_static(repo):
     '''Read data/egif_static.csv and add the assets to repo.'''
     logging.debug("Processing static information.")
-    for data in read_csv(NAME, "egif_static.csv"):
+    for data in read_csv(NAME, "static.csv"):
         asset = Asset(URIRef(data['URL']))
         asset.title = Literal(data['Title'], lang="en")
         asset.description = Literal(data['Description'], lang="en")
