@@ -30,6 +30,16 @@ PUBLISHER = Publisher(URIRef("http://www.forumstandaardisatie.nl/organisatie"))
 PUBLISHER.name = Literal("Forumstandaardisatie.nl", lang="en")
 PUBLISHER.type = PublisherType.NationalAuthority
 
+DESCRIPTIONS = {URIRef(data["URI"]):data["Description"]
+                for data in read_csv("descriptions.csv")}
+
+URL_FIXES = {}
+for data in read_csv("urlfixes.csv"):
+    urifrom, urito = URIRef(data["From"]), URIRef(data["To"])
+    if urifrom not in URL_FIXES:
+        URL_FIXES[urifrom] = set()
+    URL_FIXES[urifrom].add(urito)
+
 
 def get_asset_uris():
     '''Yield the URIRefs of all assets.'''
@@ -94,7 +104,7 @@ def get_date(page, name):
         return None
 
 
-def get_asset(uri, descriptions):
+def get_asset(uri):
     '''Generate the asset with URI uri.'''
     logging.debug("Parsing asset %s.", uri)
     page = HTMLPage(str(uri))
@@ -105,8 +115,8 @@ def get_asset(uri, descriptions):
     asset.title = Literal(title, lang="en")
     asset.altLabel = Literal(page.find(class_="title").text, lang="nl")
     description_nl = get_fulltext(page, "beschrijving")
-    if uri in descriptions:
-        description_en = descriptions[uri]
+    if uri in DESCRIPTIONS:
+        description_en = DESCRIPTIONS[uri]
     else:
         description_en = translate(description_nl)
     asset.description = {Literal(description_nl, lang="nl"),
@@ -127,11 +137,14 @@ def get_asset(uri, descriptions):
         elif level.startswith("Betekenis") or level.startswith("Structuur"):
             asset.interoperabilityLevel.add(InteroperabilityLevel.Semantic)
     asset.related = get_uris(page, "relation")
-    asset.distribution = set()
+    uris = set()
     for uri in get_uris(page, "specificatie"):
-        if not isinstance(uri, URIRef):
-            logging.warning("Invalid specification '%s'.", uri)
-            continue
+        if uri in URL_FIXES:
+            uris |= URL_FIXES[uri]
+        else:
+            uris.add(uri)
+    asset.distribution = set()
+    for uri in uris:
         d = AssetDistribution(uri)
         d.accessURL = uri
         d.status = asset.status
@@ -141,16 +154,12 @@ def get_asset(uri, descriptions):
 
 
 def process():
-    logging.debug("Loading descriptions")
-    descriptions = {URIRef(data["URI"]):data["Description"]
-                    for data in read_csv("descriptions.csv")}
-    logging.debug("Generating repository")
     repo = Repository(URIRef(URL))
     repo.accessURL = URIRef(URL)
     repo.title = {Literal(TITLE, lang="en"), Literal(TITLE_NL, lang="nl")}
     repo.description = Literal(DESCRIPTION, lang="en")
     repo.modified = get_modified(URL)
     repo.spatial = GeoNames.term("2750405")
-    repo.dataset = {get_asset(uri, descriptions) for uri in get_asset_uris()}
+    repo.dataset = {get_asset(uri) for uri in get_asset_uris()}
     repo.publisher = PUBLISHER
     return repo
