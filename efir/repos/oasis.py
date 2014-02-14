@@ -129,7 +129,7 @@ def get_asset(page, tr):
         d.license = LICENSE
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
-            d.mediaType = MediaType.term(mime)
+            d.format = MediaType.term(mime)
         if asset.description is None and mime == "text/html" and \
            not d.uri.endswith(".toc.html"):
             asset.description = get_description(str(d.uri))

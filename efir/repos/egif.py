@@ -86,7 +86,7 @@ def process_section(repo, section):
         d.title = Literal(name, lang="en")
         d.modified = get_modified(url)
         d.status = asset.status
-        d.mediaType = MediaType.term("application/xml")
+        d.format = MediaType.term("application/xml")
         d.publisher = repo.publisher
         d.representationTechnique = RepresentationTechnique.XMLSchema
         asset.distribution.add(d)
@@ -118,7 +118,7 @@ def process_static(repo):
         d.representationTechnique = RepresentationTechnique.HumanLanguage
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
-            d.mediaType = MediaType.term(mime)
+            d.format = MediaType.term(mime)
         asset.distribution = d
         repo.dataset.add(asset)
 

@@ -27,7 +27,7 @@ from .rdf import *
 InteroperabilityLevel = rdflib.Namespace("http://purl.org/adms/interoperabilitylevel/")
 RepresentationTechnique = rdflib.Namespace("http://purl.org/adms/representationtechnique/")
 Status = rdflib.Namespace("http://purl.org/adms/status/")
-#MediaType = rdflib.Namespace("http://publications.europa.eu/resource/authority/file-type")
+FileType = rdflib.Namespace("http://publications.europa.eu/resource/authority/file-type")
 MediaType = rdflib.Namespace("http://purl.org/NET/mediatypes/")
 Eurovoc = rdflib.Namespace("http://eurovoc.europa.eu/")
 Language = rdflib.Namespace("http://publications.europa.eu/resource/authority/language/")
@@ -75,7 +75,7 @@ class AssetDistribution(ADMSResource):
     status          = ADMSProperty(ADMS.status, rng=Status, min=1, max=1)
     # Recommended properties
     downloadURL     = ADMSProperty(DCAT.downloadURL, rng=URIRef)
-    mediaType       = ADMSProperty(DCAT.mediaType, rng=MediaType, max=1)
+    mediaType       = ADMSProperty(DCAT.mediaType, rng=FileType, max=1)
     license         = ADMSProperty(DCTERMS.license, rng=LicenseDocument, max=1)
     # Optional properties
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
