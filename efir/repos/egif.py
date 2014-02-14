@@ -90,8 +90,8 @@ def process_section(repo, section):
         d.publisher = repo.publisher
         d.representationTechnique = RepresentationTechnique.XMLSchema
         asset.distribution.add(d)
-        if not asset.versionInfo:
-            asset.versionInfo = version
+        if not asset.version:
+            asset.version = version
     asset.modified = max(d.modified for d in asset.distribution)
     repo.dataset.add(asset)
 

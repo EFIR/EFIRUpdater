@@ -115,7 +115,7 @@ def get_asset(page, tr):
     asset.title = Literal(title, lang="en")
     asset.status = Status.Completed
     asset.modified = get_date(approved)
-    asset.versionInfo = re.search(r"([0-9.]*)(?: \(.*\)|: .*)?$", title).group(1)
+    asset.version = re.search(r"([0-9.]*)(?: \(.*\)|: .*)?$", title).group(1)
     asset.language = Language.en
     asset.publisher = PUBLISHER
     asset.theme = Eurovoc.term("100223")
