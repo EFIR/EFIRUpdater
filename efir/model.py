@@ -71,7 +71,7 @@ class LicenseDocument(ADMSResource):
 class AssetDistribution(ADMSResource):
 
     # Mandatory properties
-    accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=URIRef, min=1)
+    accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=ADMSProperty.ACCESSURL, min=1)
     status          = ADMSProperty(ADMS.status, rng=Status, min=1, max=1)
     # Recommended properties
     downloadURL     = ADMSProperty(DCAT.downloadURL, rng=URIRef)
@@ -157,7 +157,7 @@ Asset.translation.rng = Asset
 class Repository(ADMSResource):
 
     # Mandatory properties
-    accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=URIRef, min=1)
+    accessURL       = ADMSProperty(ADMS.accessURL, also=DCAT.accessURL, rng=ADMSProperty.ACCESSURL, min=1)
     title           = ADMSProperty(RDFS.label, also=DCTERMS.title, rng=ADMSProperty.UNIQUETEXT, min=1)
     description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT, min=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher, min=1)

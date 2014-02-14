@@ -23,6 +23,7 @@ import os.path
 import shutil
 import urllib.request
 import urllib.parse
+import urllib.error
 import email.utils
 import csv
 
@@ -110,6 +111,30 @@ def get_modified(name):
             return None
     with open(filename, 'r') as f:
         return email.utils.parsedate_to_datetime(f.read().strip())
+
+def is_alive(name):
+    '''Return True if the data file name exists or the url name is alive.'''
+    filename = get_filename(name)
+    if is_url(name):
+        if os.path.exists(filename + "=notfound"):
+            return False
+        if os.path.exists(filename) or \
+           os.path.exists(filename + "=found") or \
+           os.path.exists(filename + "=modified"):
+            return True
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        try:
+            get_modified(name)
+            open(filename + "=found", 'w').close()
+            return True
+        except urllib.error.HTTPError as e:
+            if e.code in {404, 403, 503}:
+                open(filename + "=notfound", 'w').close()
+                return False
+            else:
+                raise e
+    else:
+        return os.path.exists(filename)
 
 def read_csv(name):
     '''Read a CSV file. The first row contains the column names. Yield the data

@@ -169,6 +169,9 @@ class ADMSProperty:
     # Range of Literals with mandatory unique language tags
     UNIQUETEXT = "unique text"
 
+    # Range of URIRefs that must point to a real page
+    ACCESSURL = "access url"
+
     def __init__(self, *uris, also=None, inv=None, also_inv=None,
                  rng=None, min=0, max=None):
         assert all(isinstance(uri, URIRef) for uri in uris)
@@ -253,6 +256,9 @@ class ADMSProperty:
                     if rng in (ADMSProperty.TEXT, ADMSProperty.UNIQUETEXT):
                         if isinstance(obj, Literal) and obj.language is not None:
                             break
+                    elif rng == ADMSProperty.ACCESSURL:
+                        if isinstance(obj, URIRef):
+                            break
                     elif isinstance(rng, rdflib.Namespace):
                         if isinstance(obj, URIRef) and obj.startswith(rng):
                             break
@@ -279,9 +285,14 @@ class ADMSProperty:
                 if isinstance(value, Literal) and value.language is not None:
                     if value.language in languages:
                         result.add(self, "Multiple values for a language",
-                                   resource, value.n3(), None)
+                                   resource, value.n3())
                         break
                     languages.add(value.language)
+        # Check dead links
+        if self.rng == ADMSProperty.ACCESSURL:
+            for value in values:
+                if isinstance(value, URIRef) and not is_alive(str(value)):
+                    result.add(self, "Dead link", resource, value)
         return result
 
     def _add_to_graph(self, resource, g, memo):
@@ -409,7 +420,7 @@ class ValidationResult:
     def __bool__(self):
         return not self.errors
 
-    def add(self, prop, message, resource, actual, expected):
+    def add(self, prop, message, resource, actual, expected=None):
         '''Add a validation error.'''
         key = (prop, message)
         value = (resource, actual, expected)
