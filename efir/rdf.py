@@ -20,6 +20,7 @@
 
 import logging
 import rdflib
+import datetime
 from .files import *
 
 from rdflib import URIRef, Literal
@@ -270,7 +271,8 @@ class ADMSProperty:
                             break
                     elif isinstance(obj, Literal):
                         if isinstance(obj.toPython(), rng):
-                            break
+                            if rng != datetime.datetime or obj.toPython().tzinfo:
+                                break
                 else:
                     result.add(self, "Wrong type", resource,
                                obj.n3(), self.rng)
