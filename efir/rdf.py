@@ -281,13 +281,17 @@ class ADMSProperty:
         # Check for unique language tags
         if self.rng == ADMSProperty.UNIQUETEXT:
             languages = set()
+            reported = False
             for value in values:
                 if isinstance(value, Literal) and value.language is not None:
-                    if value.language in languages:
+                    if not reported and value.language in languages:
                         result.add(self, "Multiple values for a language",
                                    resource, value.n3())
-                        break
+                        reported = True
                     languages.add(value.language)
+            if languages and "en" not in languages:
+                result.add(self, "Missing English translation", resource,
+                           "/".join(languages))
         # Check dead links
         if self.rng == ADMSProperty.ACCESSURL:
             for value in values:
