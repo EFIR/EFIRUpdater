@@ -67,6 +67,11 @@ class LicenseDocument(ADMSResource):
         ADMSResource.__init__(self, uri)
 
 
+UNKNOWN_LICENSE = LicenseDocument(URIRef("http://joinup.ec.europa.eu/category/licence/unknown-licence"))
+UNKNOWN_LICENSE.type = LicenceType.UnknownIPR
+UNKNOWN_LICENSE.label = Literal("Unknown Licence", lang="en")
+
+
 @adms_resource(ADMS.SemanticAssetDistribution, also=ADMS.AssetDistribution)
 class AssetDistribution(ADMSResource):
 
@@ -76,13 +81,13 @@ class AssetDistribution(ADMSResource):
     # Recommended properties
     downloadURL     = ADMSProperty(DCAT.downloadURL, rng=URIRef)
     mediaType       = ADMSProperty(DCAT.mediaType, rng=FileType, max=1)
-    license         = ADMSProperty(DCTERMS.license, rng=LicenseDocument, max=1)
+    license         = ADMSProperty(DCTERMS.license, rng=LicenseDocument, min=1, max=1)
     # Optional properties
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
     description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT)
     format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, max=1)
-    issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
-    modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, max=1)
+    issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, min=1, max=1)
+    modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
     title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=ADMSProperty.UNIQUETEXT)
     fileSize        = ADMSProperty(SCHEMA.fileSize, max=1)
