@@ -20,7 +20,7 @@
 
 from .. import *
 
-URL = "https://lijsten.forumstandaardisatie.nl/"
+URL = "https://lijsten.forumstandaardisatie.nl/lijsten/open-standaarden"
 
 TITLE = 'Dutch Standardisation Forum - "Comply or explain"-standards'
 TITLE_NL = 'Forum Standaardisatie - "Pas toe of leg uit"-standaarden'
@@ -149,6 +149,10 @@ def get_asset(uri):
         d.accessURL = uri
         d.status = asset.status
         d.publisher = PUBLISHER
+        d.issued = asset.modified
+        d.modified = asset.modified
+        d.title = asset.title
+        d.license = UNKNOWN_LICENSE
         asset.distribution.add(d)
     return asset
 
