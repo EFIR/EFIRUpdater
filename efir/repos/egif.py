@@ -85,10 +85,12 @@ def process_section(repo, section):
         d.accessURL = d.uri
         d.title = Literal(name, lang="en")
         d.modified = get_modified(url)
+        d.issued = d.modified
         d.status = asset.status
         d.format = MediaType.term("application/xml")
         d.publisher = repo.publisher
         d.representationTechnique = RepresentationTechnique.XMLSchema
+        d.license = UNKNOWN_LICENSE
         asset.distribution.add(d)
         if not asset.version:
             asset.version = version
@@ -116,6 +118,9 @@ def process_static(repo):
         d.status = asset.status
         d.publisher = asset.publisher
         d.representationTechnique = RepresentationTechnique.HumanLanguage
+        d.license = UNKNOWN_LICENSE
+        d.issued = asset.modified
+        d.modified = d.issued
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
             d.format = MediaType.term(mime)
