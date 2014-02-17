@@ -42,7 +42,7 @@ DELETE {
   ?s dcterms:created ?date
 } WHERE {
   ?s dcterms:created ?str
-  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00")) AS ?date)
+  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00+00:00")) AS ?date)
 }
 """,
 # Split assets and distributions
@@ -61,10 +61,13 @@ DELETE {
      rdfs:label ?name ;
      dcterms:license ?license ;
      dcterms:format <http://purl.org/NET/mediatypes/text/html> ;
+     dcterms:created ?created ;
+     dcterms:modified ?created ;
      adms:status ?status .
   ?asset radion:distribution ?d ;
          dcterms:isPartOf <http://www.w3.org/TR/> ;
          dcterms:type <http://purl.org/adms/assettype/Schema> ;
+         dcterms:modified ?created ;
          dcat:theme <http://eurovoc.europa.eu/100150> .
 } WHERE {
   ?asset a adms:SemanticAsset ;
@@ -73,19 +76,10 @@ DELETE {
          dcterms:license ?license ;
          dcterms:type ?type ;
          dcterms:title ?title ;
+         dcterms:created ?created ;
          adms:accessURL ?accessURL ;
          adms:status ?status .
   BIND(IRI(CONCAT(str(?asset), "?type=distribution")) AS ?d)
-}
-""",
-# Add dcterms:modified if it does not exist
-"""
-INSERT {
-  ?asset dcterms:modified ?date .
-} WHERE {
-  ?asset a adms:SemanticAsset ;
-         dcterms:created ?date .
-  FILTER NOT EXISTS { ?asset dcterms:modified ?modified }
 }
 """,
 # Add missing data
