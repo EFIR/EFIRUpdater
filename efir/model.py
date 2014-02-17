@@ -89,7 +89,7 @@ class AssetDistribution(ADMSResource):
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, min=1, max=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
-    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=ADMSProperty.UNIQUETEXT)
+    title           = ADMSProperty(DCTERMS.title, RDFS.label, rng=ADMSProperty.UNIQUETEXT, min=1)
     fileSize        = ADMSProperty(SCHEMA.fileSize, max=1)
     checksum        = ADMSProperty(SPDX.checksum, max=1)
     tagURL          = ADMSProperty(ADMSSW.tagURL, max=1)
