@@ -121,6 +121,7 @@ def process_static(repo):
         d.license = UNKNOWN_LICENSE
         d.issued = asset.modified
         d.modified = d.issued
+        d.title = asset.title
         mime = mimetypes.guess_type(str(d.accessURL))[0]
         if mime:
             d.format = MediaType.term(mime)
