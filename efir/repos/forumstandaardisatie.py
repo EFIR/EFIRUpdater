@@ -98,7 +98,7 @@ def get_date(page, name):
         return None
     text = item.span.text
     try:
-        return datetime.datetime.strptime(text, "%d/%m/%Y")
+        return datetime.datetime.strptime(text + " +0000", "%d/%m/%Y %z")
     except ValueError:
         logging.warning("Invalid date: %s.", text)
         return None
@@ -113,7 +113,7 @@ def get_asset(uri):
                       for line in get_fulltext(page, "full-name").split("\n")
                       if line.strip("* "))
     asset.title = Literal(title, lang="en")
-    asset.altLabel = Literal(page.find(class_="title").text, lang="nl")
+    asset.altLabel = Literal(page.find(class_="title").text.strip(), lang="en")
     description_nl = get_fulltext(page, "beschrijving")
     if uri in DESCRIPTIONS:
         description_en = DESCRIPTIONS[uri]
@@ -123,7 +123,8 @@ def get_asset(uri):
                          Literal(description_en, lang="en")}
     asset.status = Status.Completed
     asset.modified = get_date(page, "datum-opname") or get_modified(str(uri))
-    asset.version = set(get_text(page, "version"))
+    asset.version = set(text for text in get_text(page, "version")
+                             if text != "-")
     asset.language = Language.nl
     asset.publisher = PUBLISHER
     asset.type = AssetType.TechnicalInteropabilityAgreement
