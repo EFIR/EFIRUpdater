@@ -127,7 +127,7 @@ class Asset(ADMSResource):
     prev            = ADMSProperty(XHV.prev, also=ADMS.prev)
     sample          = ADMSProperty(ADMS.sample)
     translation     = ADMSProperty(ADMS.translation)
-    version         = ADMSProperty(RADION.version, also=OWL.versioninfo, rng=Literal)
+    version         = ADMSProperty(RADION.version, also=OWL.versioninfo, rng=ADMSProperty.UNIQUETEXT)
     versionNotes    = ADMSProperty(ADMS.versionNotes, rng=Literal, max=1)
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
     documentation   = ADMSProperty(FOAF.page)
