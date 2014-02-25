@@ -166,5 +166,7 @@ def process():
     repo.modified = get_modified(URL)
     repo.spatial = GeoNames.term("2750405")
     repo.dataset = {get_asset(uri) for uri in get_asset_uris()}
+    repo.dataset.update(get_asset(URIRef(data["URI"]))
+                        for data in read_csv("additional_assets.csv"))
     repo.publisher = PUBLISHER
     return repo
