@@ -124,8 +124,8 @@ def get_asset(uri):
                          Literal(description_en, lang="en")}
     asset.status = Status.Completed
     asset.modified = get_date(page, "datum-opname") or get_modified(str(uri))
-    asset.version = set(text for text in get_text(page, "version")
-                             if text != "-")
+    asset.version = set(Literal(text, lang="en")
+                        for text in get_text(page, "version") if text != "-")
     asset.language = Language.nl
     asset.publisher = PUBLISHER
     asset.type = AssetType.TechnicalInteropabilityAgreement
