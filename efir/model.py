@@ -84,7 +84,7 @@ class AssetDistribution(ADMSResource):
     # Optional properties
     representationTechnique = ADMSProperty(ADMS.representationTechnique, rng=RepresentationTechnique, max=1)
     description     = ADMSProperty(DCTERMS.description, rng=ADMSProperty.UNIQUETEXT)
-    format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, max=1)
+    format          = ADMSProperty(DCTERMS.term("format"), rng=MediaType, min=1, max=1)
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, min=1, max=1)
     modified        = ADMSProperty(DCTERMS.modified, rng=datetime.datetime, min=1, max=1)
     publisher       = ADMSProperty(DCTERMS.publisher, rng=Publisher)
