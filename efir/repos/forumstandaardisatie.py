@@ -19,6 +19,7 @@
 # permissions and limitations under the Licence.
 
 from .. import *
+import mimetypes
 
 URL = "https://lijsten.forumstandaardisatie.nl/lijsten/open-standaarden"
 
@@ -154,6 +155,11 @@ def get_asset(uri):
         d.modified = asset.modified
         d.title = asset.title
         d.license = UNKNOWN_LICENSE
+        mime = mimetypes.guess_type(str(d.accessURL))[0]
+        if mime:
+            d.format = MediaType.term(mime)
+        else:
+            d.format = MediaType.term("text/html")
         asset.distribution.add(d)
     return asset
 
