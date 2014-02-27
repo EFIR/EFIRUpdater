@@ -19,6 +19,7 @@
 # permissions and limitations under the Licence.
 
 from .rdf import *
+import mimetypes
 
 
 ## Controlled vocabularies
@@ -177,3 +178,35 @@ class Repository(ADMSResource):
 
     def __init__(self, uri):
         ADMSResource.__init__(self, uri)
+
+    def cleanup(self):
+        '''Perform common cleanup and auto-complete tasks.'''
+        self.ensure_english('title')
+        self.ensure_english('description')
+        self.accessURL = self.accessURL or self.uri
+        if not self.modified:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            self.modified = datetime.datetime(now.year, now.month, now.day,
+                                              now.hour, now.minute, now.second,
+                                              tzinfo=now.tzinfo)
+        for asset in self.get_values('dataset'):
+            asset.ensure_english('title')
+            asset.ensure_english('description')
+            asset.publisher = asset.publisher or self.publisher
+            asset.modified = asset.modified or asset.issued or self.modified
+            asset.issued = asset.issued or asset.modified
+            for d in asset.get_values('distribution'):
+                d.ensure_english('title')
+                d.ensure_english('description')
+                d.title = d.title or asset.title
+                d.accessURL = d.accessURL or d.uri
+                d.status = d.status or asset.status
+                d.modified = d.modified or d.issued or asset.modified
+                d.issued = d.issued or d.modified
+                d.license = d.license or UNKNOWN_LICENSE
+                if not d.format:
+                    mime = mimetypes.guess_type(str(d.accessURL))[0]
+                    if mime:
+                        d.format = MediaType.term(mime)
+                    else:
+                        d.format = MediaType.term("text/html")

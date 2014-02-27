@@ -36,7 +36,7 @@ class Processor:
     def __init__(self, name):
         self.name = name
 
-    def process(self):
+    def process(self, strict=False):
         logging.info("Processing repository %s.", self.name)
         with module_context(self.name):
             module = importlib.import_module('..repos.' + self.name, __name__)
@@ -45,6 +45,19 @@ class Processor:
             except:
                 logging.exception("Unable to process repository.")
                 return
+            logging.debug("Removing non top-level assets.")
+            assets = repo.get_values('dataset')
+            for asset in assets:
+                for prop in ['related', 'included', 'last', 'next', 'prev',
+                             'sample', 'translation']:
+                    values = {value.uri if isinstance(value, Asset) and
+                                           value not in assets
+                                        else value
+                              for value in asset.get_values(prop)}
+                    setattr(asset, prop, values)
+            if not strict:
+                logging.debug("Cleaning and autocompleting repository.")
+                repo.cleanup()
             logging.debug("Validating model.")
             if not isinstance(repo, Repository):
                 logging.error("Result is not a Repository: %s.", repo)

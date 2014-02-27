@@ -22,6 +22,7 @@ import logging
 import rdflib
 import datetime
 from .files import *
+from .translation import *
 
 from rdflib import URIRef, Literal
 from rdflib.namespace import RDF, RDFS, XSD, OWL, SKOS, DCTERMS, FOAF
@@ -347,7 +348,7 @@ class ADMSResource:
 
     def get_values(self, prop):
         '''Return the set of values for property prop (a string or ADMSProperty
-        instance.'''
+        instance).'''
         if isinstance(prop, ADMSProperty):
             prop = prop.name
         values = getattr(self, prop)
@@ -355,7 +356,38 @@ class ADMSResource:
             values = set()
         elif not isinstance(values, set):
             values = {values}
+        else:
+            values = values.copy()
         return values
+
+    def ensure_english(self, prop):
+        '''Ensure property prop (a string or ADMSProperty instance) has an
+        english translation if it contains a literal value. A literal without
+        language tag will be transformed to english. Otherwise, the text of
+        another language will be translated.'''
+        if isinstance(prop, ADMSProperty):
+            prop = prop.name
+        values = self.get_values(prop)
+        simple = None
+        otherlang = None
+        for value in values:
+            if isinstance(value, Literal):
+                if value.language == 'en':
+                    return
+                elif value.language:
+                    otherlang = value
+                else:
+                    simple = value
+            elif isinstance(value, str):
+                simple = value
+        if simple is not None:
+            values.remove(simple)
+            values.add(Literal(str(simple), lang="en"))
+        elif otherlang is not None:
+            values.add(Literal(translate(str(otherlang)), lang="en"))
+        if len(values) == 1:
+            values = values.pop()
+        setattr(self, prop, values)
 
     def validate(self, deep=True, result=None):
         '''Validate this resource and all its values recursively.

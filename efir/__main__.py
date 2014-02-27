@@ -27,6 +27,8 @@ from . import *
 parser = argparse.ArgumentParser(prog="efir")
 parser.add_argument('-v', '--verbose', action='store_true',
                     help="be verbose")
+parser.add_argument('-s', '--strict', action='store_true',
+                    help="do not cleanup and autocomplete model")
 parser.add_argument('-l', '--list', action='store_true',
                     help="list known repositories")
 parser.add_argument('repository', nargs='?',
@@ -47,4 +49,4 @@ if not args.repository:
 
 if args.repository not in processors:
     parser.error("Unknown repository")
-processors[args.repository].process()
+processors[args.repository].process(strict=args.strict)
