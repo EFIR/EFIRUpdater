@@ -32,7 +32,7 @@ PREFIX bibo: <http://purl.org/ontology/bibo/>
 CONSTRUCT {
   ?asset a adms:Asset .
   ?asset dcterms:title ?title .
-  ?asset skos:altLabel ?shortTitle .
+  ?asset dcterms:alternative ?shortTitle .
   ?asset adms:status <http://purl.org/adms/status/Completed> .
   ?asset dcterms:publisher ?publisher, ?creator .
   ?asset dcterms:description ?description .
@@ -51,6 +51,7 @@ CONSTRUCT {
 
   ?d a adms:AssetDistribution .
   ?d dcat:accessURL ?asset .
+  ?d dcterms:title ?title .
   ?d adms:status <http://purl.org/adms/status/Completed> .
   ?d dcterms:format <http://purl.org/NET/mediatypes/text/html> .
   ?d adms:representationTechnique <http://purl.org/adms/representationtechnique/HumanLanguage> .
@@ -118,7 +119,7 @@ DELETE {
   ?s dcterms:modified ?date
 } WHERE {
   ?s dcterms:modified ?str
-  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00")) AS ?date)
+  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00+00:00")) AS ?date)
 }
 """,
 """
@@ -128,17 +129,7 @@ DELETE {
   ?s dcterms:issued ?date
 } WHERE {
   ?s dcterms:issued ?str
-  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00")) AS ?date)
-}
-""",
-# Add missing dcterms:modified on Assets
-"""
-INSERT {
-  ?asset dcterms:modified ?date .
-} WHERE {
-  ?asset a adms:Asset ;
-         dcterms:issued ?date .
-  FILTER NOT EXISTS { ?asset dcterms:modified ?modified }
+  BIND(xsd:dateTime(CONCAT(?str, "T00:00:00+00:00")) AS ?date)
 }
 """,
 # Generate missing descriptions

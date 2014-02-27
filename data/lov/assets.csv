@@ -7,7 +7,6 @@ http://purl.org/dc/dcam
 http://purl.org/ctic/sector-publico/elecciones
 http://usefulinc.com/ns/doap
 http://www.aktors.org/ontology/portal
-http://kmm.lboro.ac.uk/ecos/1.0
 http://id.loc.gov/vocabulary/relators
 http://purl.org/vocab/lifecycle/schema
 http://schemas.talis.com/2005/address/schema
@@ -28,7 +27,6 @@ http://purl.org/dqm-vocabulary/v1/dqm
 http://purl.org/procurement/public-contracts
 http://idi.fundacionctic.org/cruzar/turismo
 http://data.ordnancesurvey.co.uk/ontology/geometry
-http://data.lirmm.fr/ontologies/sp
 http://www.telegraphis.net/ontology/measurement/quantity
 http://www.openarchives.org/ore/terms
 http://purl.org/linked-data/sdmx
@@ -41,7 +39,6 @@ http://www.oegov.org/core/owl/gc
 http://purl.org/ontology/sport
 http://purl.org/ontology/cco/core
 http://www.w3.org/ns/dcat
-http://www.geonames.org/ontology/mappings
 http://rdf.myexperiment.org/ontologies/snarm
 http://reference.data.gov.uk/def/central-government
 http://linkedgeodata.org/ontology
@@ -52,10 +49,10 @@ http://data.lirmm.fr/ontologies/oan
 http://www.loc.gov/mads/rdf/v1
 http://purl.org/vocab/relationship
 http://purl.org/dc/terms
-http://qudt.org/1.1/schema/qudt
+http://qudt.org/schema/qudt
 http://purl.org/ontology/is/core
 http://www.ontologydesignpatterns.org/ont/web/irw.owl
-http://cms-wg.sti2.org/doc/index.rdfxml
+http://iserve.kmi.open.ac.uk/ns/msm
 http://www.observedchange.com/moac/ns
 http://www.telegraphis.net/ontology/geography/geography
 http://reference.data.gov.uk/def/payment
@@ -83,7 +80,7 @@ http://reference.data.gov.uk/def/organogram
 http://purl.org/ontology/ao/core
 http://ns.bergnet.org/tac/0.1/triple-access-control
 http://purl.org/linked-data/cube
-http://poderopedia.com/vocab/schema
+http://dev.poderopedia.com/vocab/schema
 http://reference.data.gov.uk/def/intervals
 http://www.aktors.org/ontology/support
 http://www.loted.eu/ontology
@@ -91,7 +88,6 @@ http://purl.org/vocab/aiiso/schema
 http://purl.org/spar/pso
 http://purl.org/ctic/infraestructuras/organizacion
 http://www.oegov.org/core/owl/cc
-http://schema.rdfs.org/all
 http://vocab.data.gov/gd
 http://semanticweb.cs.vu.nl/2009/11/sem
 http://purl.org/linked-data/api/vocab
