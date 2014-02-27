@@ -34,7 +34,6 @@ CONSTRUCT {
   ?asset dcterms:title ?title .
   ?asset dcterms:alternative ?shortTitle .
   ?asset adms:status <http://purl.org/adms/status/Completed> .
-  ?asset dcterms:publisher ?publisher, ?creator .
   ?asset dcterms:description ?description .
   ?asset dcterms:issued ?issued .
   ?asset dcterms:modified ?modified .
@@ -58,13 +57,6 @@ CONSTRUCT {
   ?d dcterms:publisher ?publisher, ?creator .
   ?d dcterms:issued ?issued .
   ?d dcterms:modified ?modified .
-
-  ?publisher a foaf:Agent .
-  ?publisher foaf:name ?publishername .
-
-  ?creator a foaf:Agent .
-  ?creator foaf:name ?creatorname .
-  ?creator dcterms:type <http://purl.org/adms/publishertype/PrivateIndividual(s)> .
 } WHERE {
   ?voc rdf:type voaf:Vocabulary ;
        dcterms:title ?title .
@@ -72,15 +64,6 @@ CONSTRUCT {
   OPTIONAL { ?voc dcterms:description ?description }
   OPTIONAL { ?voc dcterms:modified ?modified }
   OPTIONAL { ?voc dcterms:issued ?issued }
-  OPTIONAL {
-    ?voc dcterms:publisher ?publisher
-    OPTIONAL { ?publisher foaf:name ?publishername }
-  }
-  OPTIONAL {
-    ?voc dcterms:creator ?creator
-    FILTER NOT EXISTS { ?voc dcterms:publisher ?publisher }
-    OPTIONAL { ?creator foaf:name ?creatorname }
-  }
   OPTIONAL { ?voc bibo:shortTitle ?shortTitle }
   OPTIONAL { ?voc voaf:extends ?extends }
   OPTIONAL { ?voc voaf:specializes ?specializes }
@@ -153,6 +136,13 @@ def process():
         adms.update(query)
     logging.debug("Extracting assets.")
     assets = {asset.uri:asset for asset in adms.extract_all(Asset)}
+    logging.debug("Reading publishers.")
+    publishers = {}
+    for data in read_csv("publishers.csv"):
+        p = Publisher(URIRef(data["URI"]))
+        p.name = Literal(data["Name"], lang="en")
+        p.type = PublisherType.term(data["Type"])
+        publishers[p.uri] = p
     logging.debug("Filtering assets and building repository.")
     repo = Repository(URIRef("http://lov.okfn.org/dataset/lov/"))
     repo.title = Literal(TITLE, lang="en")
@@ -163,7 +153,9 @@ def process():
     for data in read_csv("assets.csv"):
         uri = URIRef(data["URI"].rstrip("/#"))
         if uri in assets:
-            repo.dataset.add(assets[uri])
+            asset = assets[uri]
+            asset.publisher = publishers[URIRef(data["Publisher"])]
+            repo.dataset.add(asset)
         else:
             logging.warning("Asset not found: %s", uri)
     return repo
