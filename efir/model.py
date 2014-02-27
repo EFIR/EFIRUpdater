@@ -132,7 +132,7 @@ class Asset(ADMSResource):
     versionNotes    = ADMSProperty(ADMS.versionNotes, rng=Literal, max=1)
     issued          = ADMSProperty(DCTERMS.created, also=DCTERMS.issued, rng=datetime.datetime, max=1)
     documentation   = ADMSProperty(FOAF.page)
-    altLabel        = ADMSProperty(DCTERMS.alternative, also=SKOS.altLabel, rng=Literal)
+    altLabel        = ADMSProperty(DCTERMS.alternative, also=SKOS.altLabel, rng=ADMSProperty.UNIQUETEXT)
     describedBy     = ADMSProperty(WRDS.describedBy, max=1)
     metrics         = ADMSProperty(ADMSSW.metrics)
 
@@ -192,6 +192,7 @@ class Repository(ADMSResource):
         for asset in self.get_values('dataset'):
             asset.ensure_english('title')
             asset.ensure_english('description')
+            asset.ensure_english('altLabel')
             asset.publisher = asset.publisher or self.publisher
             asset.modified = asset.modified or asset.issued or self.modified
             asset.issued = asset.issued or asset.modified
